@@ -4,9 +4,11 @@ import time
 def main():
 
     rfid = RFIDController()
+    buzz = GPIOController(5, "out")
     print("Starting RFID test...")
     
     if rfid.detect_tag():
+        buzz.write(1)
         print("RFID tag detected. Proceeding with operations...")
         print("Writing data to sector 8: Hello RFID")
         if rfid.write_data(8, "Hello RFID"):
@@ -16,6 +18,7 @@ def main():
         if data:
             print("Read successful:", data)
             print("Data read from RFID:", data)
+        buzz.write(0)
     else:
         print("No RFID tag detected. Please place a tag near the reader.")
     
@@ -24,6 +27,7 @@ def main():
 
 if __name__ == '__main__':
     btn1 = GPIOController(24, "in", "down")
+    buzz = GPIOController(5, "out")
     while True:
         main()
         if btn1.read():
