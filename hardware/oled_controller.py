@@ -1,4 +1,4 @@
-from luma.core.interface.serial import I2C
+from luma.core.interface.serial import i2c
 from luma.oled.device import ssd1306
 from luma.core.render import canvas
 from PIL import ImageFont, ImageDraw, Image
@@ -8,7 +8,7 @@ class OLEDController:
         """
         Initialize the 128x64 OLED display over I2C.
         """
-        serial = I2C(port=i2c_port, address=i2c_address)
+        serial = i2c(port=i2c_port, address=i2c_address)
         self.device = ssd1306(serial, width=128, height=64)
         self.clear()
 
