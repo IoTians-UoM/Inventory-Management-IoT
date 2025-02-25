@@ -7,7 +7,9 @@ async def main_loop(ws, btn1, buzz, rfid):
     try:
         while True:
             print("Starting RFID test...")
-            if rfid.detect_tag():
+            tag = rfid.detect_tag()
+            if tag:
+                # Provide a quick buzz feedback when a tag is detected
                 buzz.write(1)
                 await asyncio.sleep(0.1)
                 buzz.write(0)
@@ -20,17 +22,21 @@ async def main_loop(ws, btn1, buzz, rfid):
                 if data:
                     print("Read successful:", data)
                     print("Data read from RFID:", data)
-                    # Await the async send_message method
                     await ws.send_message('data', data)
                 else:
                     print("No Data.")
                     await ws.send_message('data', "No Data.")
+                
+                # Wait until the tag is removed before continuing.
+                print("Waiting for tag removal...")
+                while rfid.detect_tag():
+                    await asyncio.sleep(0.2)
             else:
                 print("No RFID tag detected. Please place a tag near the reader.")
             
-            # Wait a short time before the next cycle.
+            # Wait a short time before next cycle.
             await asyncio.sleep(0.5)
-
+            
             # Check if the exit button is pressed.
             if btn1.read():
                 # Provide a quick buzz feedback pattern.
@@ -41,7 +47,6 @@ async def main_loop(ws, btn1, buzz, rfid):
                 buzz.write(1)
                 await asyncio.sleep(0.1)
                 buzz.write(0)
-                await ws.send_message("status", "Terminated.")
                 await ws.disconnect()
                 print("Button pressed. Exiting program.")
                 break
