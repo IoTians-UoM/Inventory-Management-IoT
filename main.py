@@ -37,7 +37,7 @@ def main():
                     print("No Data.")
                     asyncio.run_coroutine_threadsafe(ws_queue.put(("data", "No Data.")), loop)
                 
-                # If available, reset RFID state.
+                # Reset RFID state, if applicable.
                 try:
                     rfid.reader.stop_crypto()
                 except Exception as e:
@@ -53,7 +53,7 @@ def main():
             
             # Check if the exit button is pressed.
             if btn1.read():
-                # Quick buzz feedback.
+                # Provide a quick buzz feedback pattern.
                 buzz.write(1)
                 time.sleep(0.1)
                 buzz.write(0)
@@ -61,7 +61,7 @@ def main():
                 buzz.write(1)
                 time.sleep(0.1)
                 buzz.write(0)
-                # Signal the websocket thread to shut down by putting None in the queue.
+                # Signal the websocket thread to shut down.
                 asyncio.run_coroutine_threadsafe(ws_queue.put(None), loop)
                 print("Button pressed. Exiting program.")
                 break
