@@ -1,7 +1,7 @@
 import time
 import asyncio
 from hardware import RFIDController, GPIOController
-from websocket_thread import start_websocket_thread
+from ws_worker import start_websocket_thread
 
 def main():
     ws_url = "ws://192.168.112.97:8080"
