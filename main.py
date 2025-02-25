@@ -1,8 +1,8 @@
 from hardware import RFIDController, GPIOController
+from utils import WebSocketClient
 import time
 
-def main():
-
+def main(ws):
     rfid = RFIDController()
     buzz = GPIOController(5, "out")
     print("Starting RFID test...")
@@ -18,6 +18,7 @@ def main():
         if data:
             print("Read successful:", data)
             print("Data read from RFID:", data)
+            ws.send_message(data)
         buzz.write(0)
     else:
         print("No RFID tag detected. Please place a tag near the reader.")
@@ -28,9 +29,11 @@ def main():
 if __name__ == '__main__':
     btn1 = GPIOController(24, "in", "high")
     buzz = GPIOController(5, "out")
+    ws = WebSocketClient("ws://localhost:8000")
+    ws.connect()
     
     while True:
-        main()
+        main(ws)
         time.sleep(0.5)
         if btn1.read():
             buzz.write(1)
@@ -40,5 +43,6 @@ if __name__ == '__main__':
             buzz.write(1)
             time.sleep(0.1)
             buzz.write(0)
+            ws.disconnect()
             print("Button pressed. Exiting program.")
             break
