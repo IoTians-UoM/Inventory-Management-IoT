@@ -29,7 +29,7 @@ def main(ws):
 if __name__ == '__main__':
     btn1 = GPIOController(24, "in", "high")
     buzz = GPIOController(5, "out")
-    ws = WebSocketClient("ws://localhost:8000")
+    ws = WebSocketClient("ws://192.168.112.97:8000")
     ws.connect()
     
     while True:
