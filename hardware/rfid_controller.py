@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import spidev
 import time
 
-class RFIDReaderWriter:
+class RFIDController:
     def __init__(self, sda_pin, sck_pin, mosi_pin, miso_pin, irq_pin, rst_pin):
         self.sda_pin = sda_pin     # SDA acts as Chip Select for the RFID module
         self.sck_pin = sck_pin

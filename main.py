@@ -1,5 +1,5 @@
 import time
-from hardware import RFIDReaderWriter  # Replace 'your_module' with the actual module name if saved separately
+from hardware import RFIDController  # Replace 'your_module' with the actual module name if saved separately
 
 def main():
     # Define pin assignments based on the Raspberry Pi's BCM numbering
@@ -11,7 +11,7 @@ def main():
     RST_PIN = 25     # Reset pin
 
     # Create an instance of the RFIDReaderWriter
-    rfid = RFIDReaderWriter(SDA_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, IRQ_PIN, RST_PIN)
+    rfid = RFIDController(SDA_PIN, SCK_PIN, MOSI_PIN, MISO_PIN, IRQ_PIN, RST_PIN)
     
     try:
         print("Starting RFID test...")
