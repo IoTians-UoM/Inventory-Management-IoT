@@ -52,6 +52,7 @@ async def async_main():
     
     # Connect the async WebSocket
     await ws.connect()
+    await ws.send_message("status", "IoT connected.")
     await main_loop(ws, btn1, buzz)
 
 if __name__ == '__main__':
