@@ -6,7 +6,7 @@ async def main_loop(ws, btn1, buzz, rfid):
     try:
         while True:
             print("Starting RFID test...")
-            # Run detect_tag in a separate thread
+            # Run the detection in a thread
             tag = await asyncio.to_thread(rfid.detect_tag)
             if tag:
                 buzz.write(1)
@@ -27,6 +27,12 @@ async def main_loop(ws, btn1, buzz, rfid):
                     print("No Data.")
                     await ws.send_message('data', "No Data.")
                 
+                # Reset the RFID reader state, if available
+                try:
+                    await asyncio.to_thread(rfid.reader.stop_crypto)
+                except Exception as e:
+                    print("Error calling stop_crypto:", e)
+                
                 print("Waiting for tag removal...")
                 # Wait until the tag is removed
                 while await asyncio.to_thread(rfid.detect_tag):
@@ -34,12 +40,12 @@ async def main_loop(ws, btn1, buzz, rfid):
             else:
                 print("No RFID tag detected. Please place a tag near the reader.")
             
-            # Short delay before next cycle.
+            # Wait a short time before the next cycle
             await asyncio.sleep(0.5)
             
-            # Check if the exit button is pressed.
+            # Check if the exit button is pressed
             if btn1.read():
-                # Provide a quick buzz feedback pattern.
+                # Provide a quick buzz feedback pattern
                 buzz.write(1)
                 await asyncio.sleep(0.1)
                 buzz.write(0)
@@ -51,19 +57,19 @@ async def main_loop(ws, btn1, buzz, rfid):
                 print("Button pressed. Exiting program.")
                 break
     finally:
-        # Perform cleanup in a thread as well
+        # Cleanup resources before exit
         await asyncio.to_thread(rfid.cleanup)
         buzz.cleanup()
         btn1.cleanup()
 
 async def async_main():
-    # Initialize controllers once.
+    # Initialize controllers once
     btn1 = GPIOController(24, "in", "high")
     buzz = GPIOController(5, "out")
     rfid = RFIDController()
     ws = WebSocketClient("ws://192.168.112.97:8080")
     
-    # Connect the async WebSocket.
+    # Connect the async WebSocket
     await ws.connect()
     await ws.send_message("status", "IoT connected.")
     await main_loop(ws, btn1, buzz, rfid)
