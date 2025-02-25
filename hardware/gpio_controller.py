@@ -14,7 +14,7 @@ class GPIOController:
         """
         self.pin = pin
         
-        # Determine mode.
+        # Determine the mode.
         if isinstance(mode, str):
             mode_lower = mode.lower()
             if mode_lower == "in":
@@ -52,7 +52,7 @@ class GPIOController:
         """
         Set up edge detection on the pin.
         
-        If the pin is not already in input mode, it will be reconfigured.
+        If the pin is not already in input mode, it will be cleaned up and reconfigured.
         For active-high (active="high"), the default edge is rising,
         while for active-low (active="low"), the default edge is falling.
         
@@ -61,6 +61,13 @@ class GPIOController:
           callback: The function to call when the edge is detected.
           bouncetime (int): Debounce time in milliseconds.
         """
+        # First, remove any previous event detection.
+        try:
+            GPIO.remove_event_detect(self.pin)
+        except Exception:
+            pass
+
+        # If the pin is not in input mode, clean it up and reconfigure.
         if self.mode != GPIO.IN:
             print(f"Warning: Pin {self.pin} is not in input mode. Cleaning up and reconfiguring to input.")
             GPIO.cleanup(self.pin)
@@ -68,14 +75,10 @@ class GPIOController:
             GPIO.setup(self.pin, GPIO.IN, pull_up_down=pull_setting)
             self.mode = GPIO.IN
         
-        try:
-            GPIO.remove_event_detect(self.pin)
-        except Exception:
-            pass
-        
         if callback is None:
             raise ValueError("A callback function must be provided for interrupt detection.")
         
+        # Set default edge if none provided.
         if edge is None:
             edge = GPIO.RISING if self.active == "high" else GPIO.FALLING
         

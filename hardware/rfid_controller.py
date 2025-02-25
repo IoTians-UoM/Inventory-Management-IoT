@@ -1,114 +1,81 @@
 import RPi.GPIO as GPIO
+from mfrc522 import MFRC522
+import time
 
-class GPIOHandler:
-    def __init__(self, pin, mode="in", active="low"):
-        """
-        Initialize the GPIOHandler.
-        
-        Parameters:
-          pin (int): The BCM GPIO pin number.
-          mode (str): "in" or "out" (case-insensitive) to configure the pin.
-          active (str): For input mode, specify "high" or "low" indicating the active state.
-                        For active-high, the button press sets the pin high (so use a pull-down resistor).
-                        For active-low, the button press sets the pin low (so use a pull-up resistor).
-        """
-        self.pin = pin
-        
-        # Determine the mode.
-        if isinstance(mode, str):
-            mode_lower = mode.lower()
-            if mode_lower == "in":
-                self.mode = GPIO.IN
-            elif mode_lower == "out":
-                self.mode = GPIO.OUT
-            else:
-                raise ValueError("Invalid mode string. Use 'in' or 'out'.")
-        else:
-            self.mode = mode
-        
-        # Set BCM numbering.
-        GPIO.setmode(GPIO.BCM)
-        
-        if self.mode == GPIO.IN:
-            if isinstance(active, str):
-                active_lower = active.lower()
-                if active_lower == "high":
-                    self.active = "high"
-                    pull_setting = GPIO.PUD_DOWN  # Normally low; goes high when pressed.
-                elif active_lower == "low":
-                    self.active = "low"
-                    pull_setting = GPIO.PUD_UP    # Normally high; goes low when pressed.
-                else:
-                    raise ValueError("Invalid active value. Use 'high' or 'low'.")
-            else:
-                raise ValueError("active parameter must be a string: 'high' or 'low'.")
-            GPIO.setup(self.pin, GPIO.IN, pull_up_down=pull_setting)
-        elif self.mode == GPIO.OUT:
-            GPIO.setup(self.pin, GPIO.OUT)
-        else:
-            raise ValueError("Invalid mode. Use 'in' or 'out'.")
-    
-    def start_interrupt(self, edge=None, callback=None, bouncetime=300):
-        """
-        Set up edge detection on the pin.
-        
-        If the pin is not already in input mode, it will be cleaned up and reconfigured.
-        For active-high (active="high"), the default edge is rising,
-        while for active-low (active="low"), the default edge is falling.
-        
-        Parameters:
-          edge: GPIO.FALLING, GPIO.RISING, or GPIO.BOTH. If None, a default is chosen.
-          callback: The function to call when the edge is detected.
-          bouncetime (int): Debounce time in milliseconds.
-        """
-        # First, remove any previous event detection.
-        try:
-            GPIO.remove_event_detect(self.pin)
-        except Exception:
-            pass
 
-        # If the pin is not in input mode, clean it up and reconfigure.
-        if self.mode != GPIO.IN:
-            print(f"Warning: Pin {self.pin} is not in input mode. Cleaning up and reconfiguring to input.")
-            GPIO.cleanup(self.pin)
-            pull_setting = GPIO.PUD_DOWN if self.active == "high" else GPIO.PUD_UP
-            GPIO.setup(self.pin, GPIO.IN, pull_up_down=pull_setting)
-            self.mode = GPIO.IN
-        
-        if callback is None:
-            raise ValueError("A callback function must be provided for interrupt detection.")
-        
-        # Set default edge if none provided.
-        if edge is None:
-            edge = GPIO.RISING if self.active == "high" else GPIO.FALLING
-        
-        try:
-            GPIO.add_event_detect(self.pin, edge, callback=callback, bouncetime=bouncetime)
-        except Exception as e:
-            raise RuntimeError(f"Failed to add edge detection on pin {self.pin}: {e}")
-    
-    def read(self):
+class RFIDController:
+    def __init__(self):
+        # Initialize RFID reader (MFRC522)
+        self.reader = MFRC522()
+
+    def detect_tag(self):
         """
-        Read the current value of the pin. Available only in input mode.
+        Detect if an RFID tag is present.
+        Returns the UID if detected, else None.
         """
-        if self.mode != GPIO.IN:
-            raise RuntimeError("Read is only available when the pin is in input mode.")
-        return GPIO.input(self.pin)
-    
-    def write(self, value):
+        (status, TagType) = self.reader.MFRC522_Request(self.reader.PICC_REQIDL)
+        if status == self.reader.MI_OK:
+            print(f"Tag detected, type: {TagType}")
+            (status, uid) = self.reader.MFRC522_Anticoll()
+            if status == self.reader.MI_OK:
+                print(f"Tag UID: {uid}")
+                return uid
+        return None
+
+    def write_data(self, sector: int, data: str):
         """
-        Write a value to the pin. Available only in output mode.
-        
-        Parameters:
-          value: True/False or GPIO.HIGH/GPIO.LOW.
+        Write data to a specific sector on the RFID tag.
         """
-        if self.mode != GPIO.OUT:
-            raise RuntimeError("Write is only available when the pin is in output mode.")
-        GPIO.output(self.pin, value)
-    
+        uid = self.detect_tag()
+        if not uid:
+            print("No tag detected. Cannot write data.")
+            return False
+
+        # Authenticate sector
+        if not self.authenticate(sector, uid):
+            print(f"Authentication failed for sector {sector}.")
+            return False
+
+        # Prepare data (16 bytes required per block)
+        data_to_write = data.ljust(16)[:16]
+        data_list = [ord(c) for c in data_to_write]
+
+        self.reader.MFRC522_Write(sector, data_list)
+        print(f"Data successfully written to sector {sector}: {data_to_write}")
+        return True
+
+    def read_data(self, sector: int):
+        """
+        Read data from a specific sector on the RFID tag.
+        """
+        uid = self.detect_tag()
+        if not uid:
+            print("No tag detected. Cannot read data.")
+            return None
+
+        if not self.authenticate(sector, uid):
+            print(f"Authentication failed for sector {sector}.")
+            return None
+
+        data = self.reader.MFRC522_Read(sector)
+        if data:
+            decoded_data = ''.join([chr(i) for i in data if i != 0])
+            print(f"Data read from sector {sector}: {decoded_data}")
+            return decoded_data
+        else:
+            print(f"Failed to read data from sector {sector}.")
+            return None
+
+    def authenticate(self, sector: int, uid: list):
+        """
+        Authenticate access to a sector using default key.
+        """
+        default_key = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+        self.reader.MFRC522_SelectTag(uid)
+        status = self.reader.MFRC522_Auth(self.reader.PICC_AUTHENT1A, sector, default_key, uid)
+        return status == self.reader.MI_OK
+
     def cleanup(self):
-        """
-        Clean up the GPIO settings for this pin.
-        """
-        GPIO.cleanup(self.pin)
-        print(f"Cleaned up GPIO pin {self.pin}.")
+        """ Clean up GPIO and RFID reader resources. """
+        GPIO.cleanup(25)
+        print("Cleaned up GPIO and RFID reader.")
