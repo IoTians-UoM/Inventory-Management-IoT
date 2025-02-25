@@ -1,4 +1,5 @@
 from hardware import RFIDController, GPIOController
+import time
 
 def main():
 
@@ -28,3 +29,5 @@ if __name__ == '__main__':
         if btn1.read():
             print("Button 1 pressed")
             break
+        time.sleep(1)
+    btn1.cleanup()
