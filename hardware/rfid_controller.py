@@ -77,28 +77,5 @@ class RFIDController:
 
     def cleanup(self):
         """ Clean up GPIO and RFID reader resources. """
-        GPIO.cleanup()
+        self.reader.cleanup()
         print("Cleaned up GPIO and RFID reader.")
-
-
-# ✅ Example usage
-if __name__ == "__main__":
-    controller = RFIDController()
-
-    try:
-        print("RFID Controller started. Press Ctrl+C to stop.")
-        while True:
-            tag_uid = controller.detect_tag()
-            if tag_uid:
-                print(f"Tag UID detected: {tag_uid}")
-                if controller.write_data(8, "InventoryData"):
-                    print("Write successful.")
-                data_read = controller.read_data(8)
-                if data_read:
-                    print(f"Read data: {data_read}")
-            time.sleep(1)
-
-    except KeyboardInterrupt:
-        print("Stopping RFID Controller.")
-    finally:
-        controller.cleanup()
