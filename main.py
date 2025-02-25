@@ -21,10 +21,10 @@ async def main_loop(ws, btn1, buzz):
                 print("Read successful:", data)
                 print("Data read from RFID:", data)
                 # Await the async send_message method
-                await ws.send_message(data)
+                await ws.send_message('data', data)
             else:
                 print("No Data.")
-                await ws.send_message("No Data.")
+                await ws.send_message('data', "No Data.")
         else:
             print("No RFID tag detected. Please place a tag near the reader.")
         
