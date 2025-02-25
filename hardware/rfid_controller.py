@@ -77,5 +77,5 @@ class RFIDController:
 
     def cleanup(self):
         """ Clean up GPIO and RFID reader resources. """
-        GPIO.cleanup([self.reader.RST_PIN, self.reader.NRSTPD_PIN])
+        GPIO.cleanup(25)
         print("Cleaned up GPIO and RFID reader.")
