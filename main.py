@@ -1,4 +1,4 @@
-from hardware import RFIDController
+from hardware import RFIDController, GPIOController
 
 def main():
 
@@ -22,4 +22,9 @@ def main():
     rfid.cleanup()
 
 if __name__ == '__main__':
-    main()
+    btn1 = GPIOController(24, "in", "down")
+    while True:
+        main()
+        if btn1.read():
+            print("Button 1 pressed")
+            break
