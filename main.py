@@ -9,6 +9,8 @@ async def main_loop(ws, btn1, buzz):
         print("Starting RFID test...")
         if rfid.detect_tag():
             buzz.write(1)
+            await asyncio.sleep(0.1)
+            buzz.write(0)
             print("RFID tag detected. Proceeding with operations...")
             print("Writing data to sector 8: Hello RFID")
             if rfid.write_data(4, "Hello RFID"):
@@ -23,8 +25,6 @@ async def main_loop(ws, btn1, buzz):
             else:
                 print("No Data.")
                 await ws.send_message("No Data.")
-
-            buzz.write(0)
         else:
             print("No RFID tag detected. Please place a tag near the reader.")
         
