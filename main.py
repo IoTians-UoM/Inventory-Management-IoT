@@ -28,16 +28,17 @@ def main():
 if __name__ == '__main__':
     btn1 = GPIOController(24, "in", "high")
     buzz = GPIOController(5, "out")
-    break_loop = False
-
-    def button_callback(channel):
-        print("Button pressed!")
-        break_loop = True
-
-    btn1.start_interrupt(callback=button_callback, bouncetime=200)
     
     while True:
         main()
         time.sleep(0.5)
-        if break_loop:
+        if btn1.read():
+            buzz.write(1)
+            time.sleep(0.1)
+            buzz.write(0)
+            time.sleep(0.1)
+            buzz.write(1)
+            time.sleep(0.1)
+            buzz.write(0)
+            print("Button pressed. Exiting program.")
             break
