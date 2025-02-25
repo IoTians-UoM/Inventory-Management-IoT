@@ -26,7 +26,7 @@ def main():
     rfid.cleanup()
 
 if __name__ == '__main__':
-    btn1 = GPIOController(24, "in", "down")
+    btn1 = GPIOController(24, "in", "high")
     buzz = GPIOController(5, "out")
     break_loop = False
 
