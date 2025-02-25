@@ -2,7 +2,7 @@ import asyncio
 import websockets
 import json
 
-class InventoryWebSocketClient:
+class WebSocketClient:
     def __init__(self, url):
         """
         Initialize the WebSocket client with the server URL.
