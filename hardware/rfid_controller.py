@@ -1,5 +1,5 @@
 import RPi.GPIO as GPIO
-import MFRC522
+from mfrc522 import MFRC522
 import signal
 import time
 
@@ -7,7 +7,7 @@ import time
 class RFIDController:
     def __init__(self):
         # Initialize RFID reader (MFRC522)
-        self.reader = MFRC522.MFRC522()
+        self.reader = MFRC522()
 
     def detect_tag(self):
         """
