@@ -1,6 +1,5 @@
 from pirc522 import RFID
 import RPi.GPIO as GPIO
-import signal
 import time
 
 
