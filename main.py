@@ -1,24 +1,24 @@
 import asyncio
 from hardware import RFIDController, GPIOController
 from utils import WebSocketClient
-import time
 
 async def main_loop(ws, btn1, buzz, rfid):
     try:
         while True:
             print("Starting RFID test...")
-            tag = rfid.detect_tag()
+            # Run detect_tag in a separate thread
+            tag = await asyncio.to_thread(rfid.detect_tag)
             if tag:
-                # Provide a quick buzz feedback when a tag is detected
                 buzz.write(1)
                 await asyncio.sleep(0.1)
                 buzz.write(0)
                 print("RFID tag detected. Proceeding with operations...")
-                print("Writing data to sector 8: Hello RFID")
-                if rfid.write_data(4, "Hello RFID"):
+                print("Writing data to sector 4: Hello RFID")
+                success = await asyncio.to_thread(rfid.write_data, 4, "Hello RFID")
+                if success:
                     print("Write successful!")
-                print("Reading data from sector 8...")
-                data = rfid.read_data(4)
+                print("Reading data from sector 4...")
+                data = await asyncio.to_thread(rfid.read_data, 4)
                 if data:
                     print("Read successful:", data)
                     print("Data read from RFID:", data)
@@ -27,14 +27,14 @@ async def main_loop(ws, btn1, buzz, rfid):
                     print("No Data.")
                     await ws.send_message('data', "No Data.")
                 
-                # Wait until the tag is removed before continuing.
                 print("Waiting for tag removal...")
-                while rfid.detect_tag():
+                # Wait until the tag is removed
+                while await asyncio.to_thread(rfid.detect_tag):
                     await asyncio.sleep(0.2)
             else:
                 print("No RFID tag detected. Please place a tag near the reader.")
             
-            # Wait a short time before next cycle.
+            # Short delay before next cycle.
             await asyncio.sleep(0.5)
             
             # Check if the exit button is pressed.
@@ -51,8 +51,8 @@ async def main_loop(ws, btn1, buzz, rfid):
                 print("Button pressed. Exiting program.")
                 break
     finally:
-        # Cleanup all resources once before exit.
-        rfid.cleanup()
+        # Perform cleanup in a thread as well
+        await asyncio.to_thread(rfid.cleanup)
         buzz.cleanup()
         btn1.cleanup()
 
