@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO
 
-class GPIOHandler:
+class GPIOController:
     def __init__(self, pin, mode="in", pull="up"):
         """
         Initialize the GPIOHandler.

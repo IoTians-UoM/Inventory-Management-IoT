@@ -3,7 +3,7 @@ from luma.oled.device import ssd1306
 from luma.core.render import canvas
 from PIL import ImageFont, ImageDraw, Image
 
-class OledController:
+class OLEDController:
     def __init__(self, i2c_port=1, i2c_address=0x3C):
         """
         Initialize the 128x64 OLED display over I2C.
