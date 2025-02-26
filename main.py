@@ -4,17 +4,13 @@ import RPi.GPIO as GPIO
 
 def main():
     rfid = RFIDController()
-    block = 5         # Block (sector) to write/read (verify your tag's writable block)
+    block = 5  # Change this if necessary; verify if block 5 is writable.
     data_to_write = "Hello RFID"
-
     print("Please keep the tag near the reader.")
-    time.sleep(2)  # Allow time for the tag to be placed
+    time.sleep(2)
 
-    # Attempt to write data to the tag
     if rfid.write_data(block, data_to_write):
-        # Short delay before reading back
         time.sleep(0.5)
-        # Attempt to read data from the tag
         data = rfid.read_data(block)
         if data:
             print("Final read data:", data)
@@ -31,4 +27,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Program interrupted.")
     finally:
-        GPIO.cleanup()
+        GPIO.cleanup()  # Remove duplicate cleanup if already done.
