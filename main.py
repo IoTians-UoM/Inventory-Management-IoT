@@ -170,10 +170,10 @@ def process_messages():
                     if confirm:
                         oled.display_text('confirmed', line=2)
                         mode = stateMachine.get_state()
-                        action = Action.INVENTORY_IN if mode == Mode.INVENTORY_IN else Action.INVENTORY_OUT
+                        action = Action.INVENTORY_IN.value if mode == Mode.INVENTORY_IN.value else Action.INVENTORY_OUT.value
                         inventory_item = InventoryItem(product_id=message.get('payload').get('products')[0].get('id'),quantity=qty, timestamp=time.time())
                         payload = InventoryPayload(inventory_items=[inventory_item])
-                        msg = Message(action=action, type=Type.RESPONSE, component=Component.IOT, message_id=time.time(), status=Status.SUCCESS, timestamp=time.time(), payload=payload)
+                        msg = Message(action=action, type=Type.RESPONSE.value, component=Component.IOT.value, message_id=time.time(), status=Status.SUCCESS.value, timestamp=time.time(), payload=payload)
                         message_queue.put(msg)
                     else:
                         oled.display_text('cancelled', line=2)
