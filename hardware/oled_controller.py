@@ -16,6 +16,7 @@ class OLEDController:
 
         self.text_lines = {1: "", 2: "", 3: ""}  # Stores text for each line
         self.scroll_offsets = {1: 0, 2: 0, 3: 0}  # Scroll positions per line
+        self.scroll_enabled = {1: False, 2: False, 3: False}  # Track scrolling per line
         self.running = True  # Controls the display loop
         self.lock = threading.Lock()
 
@@ -24,7 +25,7 @@ class OLEDController:
         self.thread.start()
 
     def _update_display(self):
-        """Background loop that updates the display continuously without flickering."""
+        """Background loop that updates the display continuously without blocking."""
         while self.running:
             with self.lock:
                 with canvas(self.device) as draw:
@@ -38,15 +39,17 @@ class OLEDController:
                             if text_width <= 128:
                                 draw.text((10, y_position), text, font=self.font, fill="white")
                                 self.scroll_offsets[line] = 0  # Reset scrolling
+                                self.scroll_enabled[line] = False  # Disable scrolling
                             else:
-                                # Scroll text if too long
+                                # Enable scrolling if text is too long
+                                self.scroll_enabled[line] = True
                                 x_position = -self.scroll_offsets[line] + 10
                                 draw.text((x_position, y_position), text, font=self.font, fill="white")
-                                
+
                                 # Move text left for scrolling effect
                                 self.scroll_offsets[line] += 2
-                                
-                                # Reset scroll position when the text fully moves off-screen
+
+                                # Reset scroll position when text moves off-screen
                                 if self.scroll_offsets[line] > text_width + 10:
                                     self.scroll_offsets[line] = 0
             
@@ -64,7 +67,8 @@ class OLEDController:
 
         with self.lock:
             self.text_lines[line] = message  # Update text for the given line
-            self.scroll_offsets[line] = 0  # Reset scrolling for new text
+            self.scroll_offsets[line] = 0  # Reset scrolling position
+            self.scroll_enabled[line] = True  # Enable scrolling if needed
 
     def stop(self):
         """Stop the display update loop and clear the screen."""
@@ -79,3 +83,4 @@ class OLEDController:
         with self.lock:
             self.text_lines = {1: "", 2: "", 3: ""}
             self.scroll_offsets = {1: 0, 2: 0, 3: 0}
+            self.scroll_enabled = {1: False, 2: False, 3: False}
