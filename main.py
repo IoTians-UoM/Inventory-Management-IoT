@@ -24,19 +24,19 @@ def rfid_read_worker():
     """Thread worker that listens for button presses and reads RFID data."""
     try:
         rfid = RFIDController()
-        block = 5  # Change if necessary
         oled.display_text("Ready", line=1)
         oled.display_text("Scan RFID tag", line=2)
 
         while True:
             uid = rfid.detect_tag()
             if uid:
-                message = f"RFID Tag detected: {uid}"
+                message = f"RFID Tag: {uid}"
                 print(message)
+                oled.display_text(message, line=3)  # Add message to display queue
                 message_queue.put(message)
             else:
                 print("No RFID tag detected.")
-            time.sleep(0.5)  # Small debounce delay
+            time.sleep(0.5)
     except Exception as e:
         print(f"Error in RFID worker: {e}")
 
@@ -46,15 +46,14 @@ def mode_switch_worker():
     try:
         while True:
             if btn1.read():
-                oled.clear()
                 oled.display_text("Mode Switch", line=1)
                 oled.display_text(stateMachine.get_state(), line=2)
                 print("Mode switch button pressed.")
                 stateMachine.transition()
                 message = f"Mode switched to: {stateMachine.get_state()}"
-                print(message)
-                message_queue.put(message)            
-            time.sleep(0.5)  # Small debounce delay
+                oled.display_text(message, line=3)
+                message_queue.put(message)
+            time.sleep(0.5)
     except Exception as e:
         print(f"Error in mode switch worker: {e}")
 
