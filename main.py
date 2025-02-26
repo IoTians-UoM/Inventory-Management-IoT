@@ -4,7 +4,7 @@ import time
 import asyncio
 import RPi.GPIO as GPIO
 from hardware import RFIDController, GPIOController, StateMachine, OLEDController
-from utils import Mode, Message, Action, Type
+from utils import Mode, Message, Action, Type, ProductPayload, Component, Status, InventoryPayload, InventoryItem
 import websockets
 import json
 
@@ -17,9 +17,13 @@ modes = {
 
 stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
 message_queue = queue.Queue()
+processing_queue = queue.Queue()  # For processing incoming messages
 oled = OLEDController()
-btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
+btn2 = GPIOController(22, 'in', 'high')
+btn3 = GPIOController(27, 'in', 'high')
+btn4 = GPIOController(17, 'in', 'high')
+btn5 = GPIOController(4, 'in', 'high')
 
 oled.display_text("Welcome to", line=1)
 oled.display_text("Inventory System", line=2)
@@ -112,6 +116,7 @@ async def ws_worker():
                         try:
                             response = await ws.recv()  # Receive a message
                             print(f"Received WebSocket Message: {response}")
+                            processing_queue.put(json.loads(response)) 
                             # Handle the received message as needed
                         except websockets.exceptions.ConnectionClosed:
                             print("WebSocket connection closed, attempting to reconnect...")
@@ -131,6 +136,55 @@ def run_ws_worker():
     asyncio.run(ws_worker())
 
 
+def process_messages():
+    """Worker function to process messages from the processing queue."""
+    while True:
+        try:
+            message = processing_queue.get()
+            if message:
+                data = json.loads(message)  # Parse JSON message
+                print(f"Processing Message: {data}")
+                oled.clear()
+
+                # Perform actions based on message type
+                if data.get("action") == Action.PRODUCT_GET_BY_ID.value:
+                    oled.display_text(data.get('payload').get('products').get('name'), line=1)
+
+                    qty = 1
+                    confirm = False
+                    while True:
+                        oled.display_text(f"Qty: {qty}" , line=3)
+                        if btn2.read():
+                            qty -= 1 if qty > 1 else 1
+                        elif btn3.read():
+                            qty += 1
+                        elif btn5.read():
+                            confirm = True
+                            break;
+                        else:
+                            break;
+                        time.sleep(0.2)
+                
+                    oled.clear()
+                    if confirm:
+                        oled.display_text('confirmed', line=2)
+                        mode = stateMachine.get_state()
+                        action = Action.INVENTORY_IN if mode == Mode.INVENTORY_IN else Action.INVENTORY_OUT
+                        inventory_item = InventoryItem(product_id=data.get('payload').get('products').get('id'),quantity=qty, timestamp=time.time())
+                        payload = InventoryPayload(inventory_items=[inventory_item])
+                        msg = Message(action=action, type=Type.RESPONSE, component=Component.IOT, message_id=time.time(), status=Status.SUCCESS, timestamp=time.time(), payload=payload)
+                        message_queue.put(msg)
+                    else:
+                        oled.display_text('cancelled', line=2)
+
+
+            processing_queue.task_done()
+        except json.JSONDecodeError:
+            print("Error: Received invalid JSON format")
+        except Exception as e:
+            print(f"Error processing message: {e}")
+
+
 # Start the RFID worker thread (normal threading)
 rfid_thread = threading.Thread(target=rfid_worker, daemon=True)
 rfid_thread.start()
@@ -142,6 +196,10 @@ ws_thread.start()
 # Start the mode switch worker thread (normal threading)
 mode_thread = threading.Thread(target=mode_switch_worker, daemon=True)
 mode_thread.start()
+
+# Start the message processing worker thread
+processing_thread = threading.Thread(target=process_messages, daemon=True)
+processing_thread.start()
 
 
 # Main thread loop
