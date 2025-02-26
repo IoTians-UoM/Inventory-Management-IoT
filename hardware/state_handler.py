@@ -35,12 +35,15 @@ if __name__ == "__main__":
     # Define states and allowed transitions
     states = {
         "IDLE": ["PROCESSING"],
-        "PROCESSING": ["COMPLETED", "ERROR"],
+        "PROCESSING": ["COMPLETED"],
         "COMPLETED": ["IDLE"],
-        "ERROR": ["IDLE"]
     }
 
     sm = StateMachine(states, initial_state="IDLE")
+    print("Current state:", sm.get_state())
+    sm.transition()
+    print("Current state:", sm.get_state())
+    sm.transition()
     print("Current state:", sm.get_state())
     sm.transition()
     print("Current state:", sm.get_state())

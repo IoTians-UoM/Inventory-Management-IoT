@@ -6,49 +6,57 @@ import RPi.GPIO as GPIO
 from hardware import RFIDController, GPIOController, StateMachine
 from utils import WebSocketClient, Mode
 
+
 modes = {
         Mode.TAG_WRITE: [Mode.INVENTORY_IN],
         Mode.TAG_WRITE: [Mode.INVENTORY_OUT],
         Mode.INVENTORY_IN: [Mode.TAG_WRITE],
     }
 
-# Queue for WebSocket messages
 stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
 message_queue = queue.Queue()
 btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
 
+
 def rfid_read_worker():
     """Thread worker that listens for button presses and reads RFID data."""
-    rfid = RFIDController()
-    block = 5  # Change if necessary
+    try:
+        rfid = RFIDController()
+        block = 5  # Change if necessary
 
-    while True:
-        # Wait for button press
-        print("Waiting for button press...")
-        if btn5.read():
-            print("Button pressed.")
-            uid = rfid.detect_tag()
-            if uid:
-                message = f"RFID Tag detected: {uid}"
-                print(message)
-                message_queue.put(message)
-            else:
-                print("No RFID tag detected.")
+        while True:
+            # Wait for button press
+            print("Waiting for button press...")
+            if btn5.read():
+                print("Button pressed.")
+                uid = rfid.detect_tag()
+                if uid:
+                    message = f"RFID Tag detected: {uid}"
+                    print(message)
+                    message_queue.put(message)
+                else:
+                    print("No RFID tag detected.")
 
-        time.sleep(0.5)  # Small debounce delay
+            time.sleep(0.5)  # Small debounce delay
+    except Exception as e:
+        print(f"Error in RFID worker: {e}")
 
 
 def mode_switch_worker():
     """Thread worker that listens for mode switch button presses."""
-    while True:
-        if btn1.read():
-            print("Mode switch button pressed.")
-            stateMachine.transition()
-            message = f"Mode switched to: {stateMachine.get_state()}"
-            print(message)
-            message_queue.put(message)            
-        time.sleep(0.5)  # Small debounce delay
+    try:
+        while True:
+            if btn1.read():
+                print("Mode switch button pressed.")
+                stateMachine.transition()
+                message = f"Mode switched to: {stateMachine.get_state()}"
+                print(message)
+                message_queue.put(message)            
+            time.sleep(0.5)  # Small debounce delay
+    except Exception as e:
+        print(f"Error in mode switch worker: {e}")
+
 
 async def ws_sender_worker():
     """Async worker that sends messages from the queue to WebSocket."""
@@ -69,6 +77,7 @@ def run_ws_worker():
     """Runs the async WebSocket worker inside an asyncio event loop."""
     asyncio.run(ws_sender_worker())
 
+
 # Start the RFID worker thread (normal threading)
 rfid_thread = threading.Thread(target=rfid_read_worker, daemon=True)
 rfid_thread.start()
@@ -81,6 +90,8 @@ ws_thread.start()
 mode_thread = threading.Thread(target=mode_switch_worker, daemon=True)
 mode_thread.start()
 
+
+# Main thread loop
 try:
     while True:
         time.sleep(1)  # Keep main thread running
