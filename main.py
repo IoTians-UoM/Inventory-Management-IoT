@@ -9,8 +9,8 @@ from utils import WebSocketClient, Mode
 
 modes = {
         Mode.TAG_WRITE: [Mode.INVENTORY_IN],
-        Mode.TAG_WRITE: [Mode.INVENTORY_OUT],
-        Mode.INVENTORY_IN: [Mode.TAG_WRITE],
+        Mode.INVENTORY_IN: [Mode.INVENTORY_OUT],
+        Mode.INVENTORY_OUT: [Mode.TAG_WRITE],
     }
 
 stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
