@@ -20,7 +20,7 @@ btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
 
 
-def rfid_read_worker():
+def rfid_worker():
     """Thread worker that listens for button presses and reads RFID data."""
     try:
         rfid = RFIDController()
@@ -29,14 +29,24 @@ def rfid_read_worker():
 
         while True:
             uid = rfid.detect_tag()
+            mode = stateMachine.get_state()
             if uid:
-                oled.clear()
-                oled.display_text("RFID Tag", line=1)
-                oled.display_text("Detected", line=2)
-                oled.display_text(uid, line=3)  # Add message to display queue
-                message = f"RFID Tag: {uid}"
-                print(message)
-                message_queue.put(message)
+                if mode == Mode.TAG_WRITE:
+                    oled.display_text("Tag Write", line=1)
+                    oled.display_text("Scan RFID tag", line=2)
+                    rfid.write_data(5, "Hello, RFID!")
+                    message = f"Tag Write: {uid}"
+                    print(message)
+                    message_queue.put(message)
+                else:
+                    oled.display_text("Inventory In", line=1)
+                    oled.display_text("Scan RFID tag", line=2)
+                    if mode == Mode.INVENTORY_IN:
+                        message = f"Inventory In: {uid}"
+                    else:
+                        message = f"Inventory Out: {uid}"
+                    print(message)
+                    message_queue.put(message)
             else:
                 print("No RFID tag detected.")
             time.sleep(0.5)
@@ -83,12 +93,12 @@ def run_ws_worker():
 
 
 # Start the RFID worker thread (normal threading)
-rfid_thread = threading.Thread(target=rfid_read_worker, daemon=True)
+rfid_thread = threading.Thread(target=rfid_worker, daemon=True)
 rfid_thread.start()
 
-# Start the WebSocket worker inside its own async event loop
-ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
-ws_thread.start()
+# # Start the WebSocket worker inside its own async event loop
+# ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
+# ws_thread.start()
 
 # Start the mode switch worker thread (normal threading)
 mode_thread = threading.Thread(target=mode_switch_worker, daemon=True)
