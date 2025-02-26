@@ -17,6 +17,8 @@ stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
 message_queue = queue.Queue()
 oled = OLEDController()
 oled.display_message("Ready", line=1)
+oled.display_message("Scan RFID tag", line=2)
+oled.display_message("Mode Switch", line=3)
 btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
 
