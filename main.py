@@ -3,7 +3,7 @@ import queue
 import time
 import asyncio
 import RPi.GPIO as GPIO
-from hardware import RFIDController, GPIOController, StateMachine
+from hardware import RFIDController, GPIOController, StateMachine, OLEDController
 from utils import WebSocketClient, Mode
 
 
@@ -15,8 +15,15 @@ modes = {
 
 stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
 message_queue = queue.Queue()
+display = OLEDController()
 btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
+
+# Display a test message
+display.display_message("Hello, OLED!", line=1)
+display.display_custom_text(["Raspberry Pi", "OLED Display", "GPIO 2 & 3", "I2C Bus 1"])
+time.sleep(3)
+display.cleanup()
 
 
 def rfid_read_worker():
