@@ -1,63 +1,25 @@
-from hardware import RFIDController, GPIOController
+from hardware import RFIDController
 import time
 
-def write_tag(data_to_write="Hello RFID", sector=8):
-    # Create RFID and buzzer controllers
+def main():
     rfid = RFIDController()
-    buzz = GPIOController(5, "out")
-    print("Starting RFID operation...")
+    block = 8         # Block (sector) to write/read (verify your tag's writable block)
+    data_to_write = "Hello RFID"
 
-    # Check if an RFID tag is detected
-    if rfid.detect_tag():
-        buzz.write(1)  # Provide immediate feedback (buzzer on)
-        print("RFID tag detected. Proceeding with operations...")
-        
-        # Write data to the specified sector
-        print(f"Writing data to sector {sector}: {data_to_write}")
-        if rfid.write_data(sector, data_to_write):
-            print("Write successful!")
-        else:
-            print("Write failed!")
-        
-        # Read data back from the tag for verification
-        print(f"Reading data from sector {sector}...")
-        data = rfid.read_data(sector)
+    print("Please keep the tag near the reader.")
+    time.sleep(2)  # Allow time for the tag to be placed
+
+    # Attempt to write data to the tag
+    if rfid.write_data(block, data_to_write):
+        # Short delay before reading back
+        time.sleep(0.5)
+        # Attempt to read data from the tag
+        data = rfid.read_data(block)
         if data:
-            print("Read successful:", data)
-            print("Data read from RFID:", data)
+            print("Final read data:", data)
         else:
-            print("No data read from the tag.")
-        buzz.write(0)
+            print("Failed to read data from the tag.")
     else:
-        print("No RFID tag detected. Please place a tag near the reader.")
-    
-    # Clean up the RFID resources
+        print("Write operation failed.")
+
     rfid.cleanup()
-
-if __name__ == '__main__':
-    # Setup button for termination and buzzer for feedback
-    btn1 = GPIOController(24, "in", "high")
-    buzz = GPIOController(5, "out")
-    
-    try:
-        # Main loop: continuously try to write a tag until a termination button is pressed
-        while True:
-            write_tag()  # Attempt to write to the tag
-            time.sleep(0.5)  # Delay between attempts
-
-            # Check if termination button is pressed
-            if btn1.read():
-                # Provide a quick buzzer pattern to indicate shutdown
-                buzz.write(1)
-                time.sleep(0.1)
-                buzz.write(0)
-                time.sleep(0.1)
-                buzz.write(1)
-                time.sleep(0.1)
-                buzz.write(0)
-                print("Button pressed. Exiting program.")
-                break
-    except KeyboardInterrupt:
-        print("Program interrupted. Exiting...")
-    finally:
-        buzz.write(0)

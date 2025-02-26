@@ -2,80 +2,94 @@ import RPi.GPIO as GPIO
 from mfrc522 import MFRC522
 import time
 
-
 class RFIDController:
     def __init__(self):
-        # Initialize RFID reader (MFRC522)
+        # Initialize the MFRC522 RFID reader
         self.reader = MFRC522()
 
     def detect_tag(self):
         """
-        Detect if an RFID tag is present.
-        Returns the UID if detected, else None.
+        Check if an RFID tag is present.
+        Returns the UID if detected, otherwise returns None.
         """
-        (status, TagType) = self.reader.MFRC522_Request(self.reader.PICC_REQIDL)
+        (status, tag_type) = self.reader.MFRC522_Request(self.reader.PICC_REQIDL)
         if status == self.reader.MI_OK:
-            print(f"Tag detected, type: {TagType}")
             (status, uid) = self.reader.MFRC522_Anticoll()
             if status == self.reader.MI_OK:
-                print(f"Tag UID: {uid}")
+                print("Tag detected, UID:", uid)
                 return uid
         return None
 
-    def write_data(self, sector: int, data: str):
+    def authenticate(self, block, uid):
         """
-        Write data to a specific sector on the RFID tag.
-        """
-        uid = self.detect_tag()
-        if not uid:
-            print("No tag detected. Cannot write data.")
-            return False
-
-        # Authenticate sector
-        if not self.authenticate(sector, uid):
-            print(f"Authentication failed for sector {sector}.")
-            return False
-
-        # Prepare data (16 bytes required per block)
-        data_to_write = data.ljust(16)[:16]
-        data_list = [ord(c) for c in data_to_write]
-
-        self.reader.MFRC522_Write(sector, data_list)
-        print(f"Data successfully written to sector {sector}: {data_to_write}")
-        return True
-
-    def read_data(self, sector: int):
-        """
-        Read data from a specific sector on the RFID tag.
-        """
-        uid = self.detect_tag()
-        if not uid:
-            print("No tag detected. Cannot read data.")
-            return None
-
-        if not self.authenticate(sector, uid):
-            print(f"Authentication failed for sector {sector}.")
-            return None
-
-        data = self.reader.MFRC522_Read(sector)
-        if data:
-            decoded_data = ''.join([chr(i) for i in data if i != 0])
-            print(f"Data read from sector {sector}: {decoded_data}")
-            return decoded_data
-        else:
-            print(f"Failed to read data from sector {sector}.")
-            return None
-
-    def authenticate(self, sector: int, uid: list):
-        """
-        Authenticate access to a sector using default key.
+        Authenticate the specified block (sector) on the tag using the default key.
+        Returns True if authentication is successful.
         """
         default_key = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
         self.reader.MFRC522_SelectTag(uid)
-        status = self.reader.MFRC522_Auth(self.reader.PICC_AUTHENT1A, sector, default_key, uid)
-        return status == self.reader.MI_OK
+        status = self.reader.MFRC522_Auth(self.reader.PICC_AUTHENT1A, block, default_key, uid)
+        if status == self.reader.MI_OK:
+            return True
+        else:
+            print("Authentication failed for block", block)
+            return False
+
+    def write_data(self, block, data):
+        """
+        Write a string (up to 16 characters) to the given block.
+        Returns True on success, False on failure.
+        """
+        uid = self.detect_tag()
+        if uid is None:
+            print("Error: No tag detected. Cannot write data.")
+            return False
+
+        # Delay to ensure the tag remains in the field
+        time.sleep(0.2)
+
+        if not self.authenticate(block, uid):
+            return False
+
+        # Prepare data: pad or trim to 16 characters, then convert to list of integers
+        data_str = data.ljust(16)[:16]
+        data_list = [ord(c) for c in data_str]
+        print(f"Writing to block {block}: '{data_str}'")
+
+        status = self.reader.MFRC522_Write(block, data_list)
+        if status == self.reader.MI_OK:
+            print("Data successfully written.")
+            return True
+        else:
+            print("Error: Write operation failed with status", status)
+            return False
+
+    def read_data(self, block):
+        """
+        Read data from the given block.
+        Returns the data as a string if successful, or None if not.
+        """
+        uid = self.detect_tag()
+        if uid is None:
+            print("Error: No tag detected. Cannot read data.")
+            return None
+
+        # Delay to ensure stability before authentication
+        time.sleep(0.2)
+
+        if not self.authenticate(block, uid):
+            return None
+
+        data = self.reader.MFRC522_Read(block)
+        if data:
+            # Convert non-zero bytes to characters and combine into a string
+            decoded = ''.join(chr(i) for i in data if i != 0)
+            print(f"Data read from block {block}: '{decoded}'")
+            return decoded
+        else:
+            print("Error: Read operation failed.")
+            return None
 
     def cleanup(self):
-        """ Clean up GPIO and RFID reader resources. """
-        GPIO.cleanup(25)
-        print("Cleaned up GPIO and RFID reader.")
+        """Clean up GPIO resources."""
+        GPIO.cleanup()
+        print("Cleaned up GPIO and RFID resources.")
