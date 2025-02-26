@@ -41,7 +41,7 @@ async def ws_sender_worker():
             message = await asyncio.to_thread(message_queue.get)  # Get message in async way
             if message:
                 print(f"Sending WebSocket Message: {message}")
-                await ws.send_message(message)  # Send via WebSocket
+                await ws.send_message('detect', message)  # Send via WebSocket
                 message_queue.task_done()
         except Exception as e:
             print(f"Error in WebSocket thread: {e}")
