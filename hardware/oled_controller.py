@@ -19,37 +19,43 @@ class OLEDController:
         with canvas(self.device) as draw:
             draw.rectangle(self.device.bounding_box, outline="black", fill="black")
 
-    def display_text(self, text_lines, scroll_speed=0.05):
+    def display_message(self, message, line=1, scroll_speed=0.05):
         """
-        Display up to 3 lines at the same time. Scrolls text if it's too long.
-
-        :param text_lines: List of text strings (max 3 lines)
+        Display a message on a specified line (1-3). Scrolls if the text is too long.
+        
+        :param message: The text to display
+        :param line: Line number (1-3)
         :param scroll_speed: Speed of scrolling (lower = faster)
         """
-        max_lines = 3
-        text_lines = text_lines[:max_lines]  # Ensure max 3 lines
-        line_heights = [0, 20, 40]  # Y positions for 3 lines
-        offsets = [0] * len(text_lines)  # Starting positions for each line
+        if line < 1 or line > 3:
+            raise ValueError("Line number must be between 1 and 3.")
 
-        # Get text widths
-        text_widths = [self.font.getsize(text)[0] for text in text_lines]
+        line_height = 20  # Adjusted for larger font
+        y_position = (line - 1) * line_height
 
-        # Determine if any line needs scrolling
-        need_scroll = [width > 128 for width in text_widths]
+        # Get text width
+        text_width, _ = self.font.getsize(message)
 
-        while any(need_scroll):  # Continue scrolling until all fit
+        # If text fits, just display it statically
+        if text_width <= 128:
             with canvas(self.device) as draw:
-                for i, text in enumerate(text_lines):
-                    x_position = -offsets[i] + 10  # Adjust scrolling position
-                    draw.text((x_position, line_heights[i]), text, font=self.font, fill="white")
+                draw.text((10, y_position), message, font=self.font, fill="white")
+            return
 
-                    # Scroll if needed
-                    if need_scroll[i]:
-                        offsets[i] += 2  # Move text left
-                        if offsets[i] > text_widths[i]:  # Reset when fully scrolled
-                            offsets[i] = -128
-
+        # Scrolling effect
+        for offset in range(text_width + 128):  # Move text across screen
+            with canvas(self.device) as draw:
+                draw.text((-offset + 10, y_position), message, font=self.font, fill="white")
             time.sleep(scroll_speed)  # Adjust scroll speed
+
+    def display_custom_text(self, text_lines):
+        """Display multiple lines of custom text (without scrolling)."""
+        with canvas(self.device) as draw:
+            for i, line_text in enumerate(text_lines):
+                if i >= 3:  # Limit to 3 lines to avoid overlap
+                    break  
+                y_position = i * 20
+                draw.text((10, y_position), line_text, font=self.font, fill="white")
 
     def cleanup(self):
         """Clear and release display resources."""
