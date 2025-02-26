@@ -1,3 +1,4 @@
+import time
 from luma.core.interface.serial import i2c
 from luma.oled.device import ssd1306
 from luma.core.render import canvas
@@ -14,40 +15,49 @@ class OLEDController:
         self.clear()
 
     def clear(self):
-        """
-        Clear the display.
-        """
+        """Clear the display."""
         with canvas(self.device) as draw:
             draw.rectangle(self.device.bounding_box, outline="black", fill="black")
 
-    def display_message(self, message, line=1):
+    def display_message(self, message, line=1, scroll_speed=0.05):
         """
-        Display a message on a specified line (1-3) of the OLED using a larger font.
+        Display a message on a specified line (1-3). Scrolls if the text is too long.
+        
+        :param message: The text to display
+        :param line: Line number (1-3)
+        :param scroll_speed: Speed of scrolling (lower = faster)
         """
         if line < 1 or line > 3:
-            raise ValueError("Line number must be between 1 and 3 for better spacing.")
+            raise ValueError("Line number must be between 1 and 3.")
 
-        line_height = 20  # Increase line spacing for larger font
+        line_height = 20  # Adjusted for larger font
         y_position = (line - 1) * line_height
 
-        with canvas(self.device) as draw:
-            draw.rectangle(self.device.bounding_box, outline="black", fill="black")
-            draw.text((10, y_position), message, font=self.font, fill="white")  # Centered text
+        # Get text width
+        text_width, _ = self.font.getsize(message)
+
+        # If text fits, just display it statically
+        if text_width <= 128:
+            with canvas(self.device) as draw:
+                draw.text((10, y_position), message, font=self.font, fill="white")
+            return
+
+        # Scrolling effect
+        for offset in range(text_width + 128):  # Move text across screen
+            with canvas(self.device) as draw:
+                draw.text((-offset + 10, y_position), message, font=self.font, fill="white")
+            time.sleep(scroll_speed)  # Adjust scroll speed
 
     def display_custom_text(self, text_lines):
-        """
-        Display multiple lines of custom text with larger font.
-        """
+        """Display multiple lines of custom text (without scrolling)."""
         with canvas(self.device) as draw:
             for i, line_text in enumerate(text_lines):
-                if i >= 3:  # Limit to 3 lines to avoid text overlap
+                if i >= 3:  # Limit to 3 lines to avoid overlap
                     break  
                 y_position = i * 20
-                draw.text((10, y_position), line_text, font=self.font, fill="white")  # Adjusted for larger font
+                draw.text((10, y_position), line_text, font=self.font, fill="white")
 
     def cleanup(self):
-        """
-        Clear and release display resources.
-        """
+        """Clear and release display resources."""
         self.clear()
         print("OLED cleanup done.")

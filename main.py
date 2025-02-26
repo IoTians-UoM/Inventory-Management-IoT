@@ -21,14 +21,11 @@ btn1 = GPIOController(24, 'in', 'high')
 
 # Display a test message
 oled = OLEDController()
-oled.display_message("Hello!", line=1)
+oled.display_message("Short text", line=1)
 time.sleep(5)
-oled.display_message("OLED 128x64", line=2)
+oled.display_message("This is a very long text that scrolls smoothly on the screen!", line=2)
 time.sleep(5)
-oled.display_message("Big Font!", line=3)
-time.sleep(5)
-oled.display_custom_text(["Line 1", "Line 2", "Line 3"])
-time.sleep(5)
+oled.display_custom_text(["Line 1 Normal", "Long text will scroll automatically", "Line 3 Normal"])
 oled.cleanup()
 
 
