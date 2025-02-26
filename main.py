@@ -23,3 +23,6 @@ def main():
         print("Write operation failed.")
 
     rfid.cleanup()
+
+if __name__ == 'main':
+    main()
