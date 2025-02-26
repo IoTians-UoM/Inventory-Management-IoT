@@ -3,13 +3,20 @@ import queue
 import time
 import asyncio
 import RPi.GPIO as GPIO
-from hardware import RFIDController
-from hardware import GPIOController
-from utils import WebSocketClient  # Assuming you have this implemented
+from hardware import RFIDController, GPIOController, StateMachine
+from utils import WebSocketClient, Mode
+
+modes = {
+        Mode.TAG_WRITE: [Mode.INVENTORY_IN],
+        Mode.TAG_WRITE: [Mode.INVENTORY_OUT],
+        Mode.INVENTORY_IN: [Mode.TAG_WRITE],
+    }
 
 # Queue for WebSocket messages
+stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
 message_queue = queue.Queue()
-btn1 = GPIOController(4, 'in', 'high')
+btn5 = GPIOController(4, 'in', 'high')
+btn1 = GPIOController(24, 'in', 'high')
 
 def rfid_read_worker():
     """Thread worker that listens for button presses and reads RFID data."""
@@ -19,7 +26,7 @@ def rfid_read_worker():
     while True:
         # Wait for button press
         print("Waiting for button press...")
-        if btn1.read():
+        if btn5.read():
             print("Button pressed.")
             uid = rfid.detect_tag()
             if uid:
@@ -29,6 +36,18 @@ def rfid_read_worker():
             else:
                 print("No RFID tag detected.")
 
+        time.sleep(0.5)  # Small debounce delay
+
+
+def mode_switch_worker():
+    """Thread worker that listens for mode switch button presses."""
+    while True:
+        if btn1.read():
+            print("Mode switch button pressed.")
+            stateMachine.switch_mode()
+            message = f"Mode switched to: {stateMachine.current_mode}"
+            print(message)
+            message_queue.put(message)            
         time.sleep(0.5)  # Small debounce delay
 
 async def ws_sender_worker():
@@ -57,6 +76,10 @@ rfid_thread.start()
 # Start the WebSocket worker inside its own async event loop
 ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
 ws_thread.start()
+
+# Start the mode switch worker thread (normal threading)
+mode_thread = threading.Thread(target=mode_switch_worker, daemon=True)
+mode_thread.start()
 
 try:
     while True:
