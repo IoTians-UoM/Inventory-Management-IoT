@@ -12,7 +12,7 @@ class OLEDController:
         Initialize the 128x64 OLED display with independent scrolling and a message queue.
         """
         serial = i2c(port=i2c_port, address=i2c_address)
-        self.device = ssd1306(serial, width=128, height=64)
+        self.device = ssd1306(serial, width=120, height=64)
         self.font = ImageFont.truetype(font_path, font_size)
 
         self.text_queue = queue.Queue()  # Queue to handle display messages
