@@ -25,7 +25,8 @@ def rfid_read_worker():
     try:
         rfid = RFIDController()
         block = 5  # Change if necessary
-        oled.display_text(["Ready", "Scan RFID tag"])
+        oled.display_text("Ready", line=1)
+        oled.display_text("Scan RFID tag", line=2)
 
         while True:
             uid = rfid.detect_tag()
@@ -45,7 +46,9 @@ def mode_switch_worker():
     try:
         while True:
             if btn1.read():
-                oled.display_text(["Switching mode..."])
+                oled.clear()
+                oled.display_text("Mode Switch", line=1)
+                oled.display_text(stateMachine.get_state(), line=2)
                 print("Mode switch button pressed.")
                 stateMachine.transition()
                 message = f"Mode switched to: {stateMachine.get_state()}"
