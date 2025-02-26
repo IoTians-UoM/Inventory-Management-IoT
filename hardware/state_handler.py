@@ -30,7 +30,7 @@ class StateMachine:
         return self.current_state
 
 
-# ✅ Example usage
+# Example usage
 if __name__ == "__main__":
     # Define states and allowed transitions
     states = {
@@ -41,6 +41,8 @@ if __name__ == "__main__":
     }
 
     sm = StateMachine(states, initial_state="IDLE")
+    print("Current state:", sm.get_state())
+    sm.transition()
     print("Current state:", sm.get_state())
     sm.transition()
     print("Current state:", sm.get_state())
