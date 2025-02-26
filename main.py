@@ -32,6 +32,7 @@ def rfid_worker():
         while True:
             uid = rfid.detect_tag()
             mode = stateMachine.get_state()
+            print(f"Current mode: {mode}")
             if uid:
                 oled.clear()
                 if mode == Mode.TAG_WRITE:
@@ -42,12 +43,15 @@ def rfid_worker():
                     print(message)
                     message_queue.put(message)
                 else:
-                    oled.display_text("Inventory In", line=1)
-                    oled.display_text("Scan RFID tag", line=2)
+                    data = rfid.read_data(5)
+                    oled.display_text("Scan RFID tag", line=1)
                     if mode == Mode.INVENTORY_IN:
+                        oled.display_text("Inventory In", line=2)
                         message = f"Inventory In: {uid}"
                     else:
+                        oled.display_text("Inventory Out", line=2)
                         message = f"Inventory Out: {uid}"
+                    oled.display_text(f"{data}", line=3)
                     print(message)
                     message_queue.put(message)
             else:
