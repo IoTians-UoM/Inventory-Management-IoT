@@ -44,7 +44,7 @@ def mode_switch_worker():
     while True:
         if btn1.read():
             print("Mode switch button pressed.")
-            stateMachine.switch_mode()
+            stateMachine.transition()
             message = f"Mode switched to: {stateMachine.current_mode}"
             print(message)
             message_queue.put(message)            
