@@ -34,23 +34,31 @@ def rfid_worker():
             mode = stateMachine.get_state()
             print(f"Current mode: {mode}")
             if uid:
-                oled.clear()
                 if mode == Mode.TAG_WRITE:
+                    oled.clear()
                     oled.display_text("Tag Write", line=1)
                     oled.display_text("Scan RFID tag", line=2)
-                    rfid.write_data(5, "Hello, RFID!")
-                    message = f"Tag Write: {uid}"
-                    print(message)
-                    message_queue.put(message)
+                    uid = rfid.detect_tag()
+                    if uid:
+                        oled.display_text("writing...", line=3)
+                        rfid.write_data(5, "Hello, RFID!")
+                        time.sleep(1)
+                        message = f"Tag Write: {uid}"
+                        print(message)
+                        message_queue.put(message)
                 else:
-                    data = rfid.read_data(5)
-                    oled.display_text("Scan RFID tag", line=1)
+                    oled.clear()
                     if mode == Mode.INVENTORY_IN:
-                        oled.display_text("Inventory In", line=2)
-                        message = f"Inventory In: {uid}"
+                        oled.display_text("Inventory In", line=1)
                     else:
-                        oled.display_text("Inventory Out", line=2)
-                        message = f"Inventory Out: {uid}"
+                        oled.display_text("Inventory Out", line=1)
+                    oled.display_text("Scan RFID tag", line=2)
+                    uid = rfid.detect_tag()
+                    if uid:
+                        oled.display_text("reading...", line=3)
+                        data = rfid.read_data(5)
+                        time.sleep(1)
+                        message = f"Inventory {mode}: {uid}, {data}"
                     oled.display_text(f"{data}", line=3)
                     print(message)
                     message_queue.put(message)
@@ -69,8 +77,8 @@ def mode_switch_worker():
                 oled.clear()
                 oled.display_text("Mode Switch", line=1)
                 oled.display_text("to", line=2)
-                oled.display_text(stateMachine.get_state().value, line=3)
                 stateMachine.transition()
+                oled.display_text(stateMachine.get_state().value, line=3)
                 message = f"Mode switched to: {stateMachine.get_state()}"
                 print(message)
                 message_queue.put(message)
