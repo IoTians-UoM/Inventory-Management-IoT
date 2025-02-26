@@ -141,14 +141,14 @@ def process_messages():
     """Worker function to process messages from the processing queue."""
     while True:
         try:
-            message = processing_queue.get()[0]
+            message = processing_queue.get()    
             if message:
                 print(f"Processing Message: {message}")
                 oled.clear()
 
                 # Perform actions based on message type
                 if message.get("action") == Action.PRODUCT_GET_BY_ID.value:
-                    oled.display_text(message.get('payload').get('products').get('name'), line=1)
+                    oled.display_text(message.get('payload').get('products')[0].get('name'), line=1)
 
                     qty = 1
                     confirm = False
@@ -170,7 +170,7 @@ def process_messages():
                         oled.display_text('confirmed', line=2)
                         mode = stateMachine.get_state()
                         action = Action.INVENTORY_IN if mode == Mode.INVENTORY_IN else Action.INVENTORY_OUT
-                        inventory_item = InventoryItem(product_id=message.get('payload').get('products').get('id'),quantity=qty, timestamp=time.time())
+                        inventory_item = InventoryItem(product_id=message.get('payload').get('products')[0].get('id'),quantity=qty, timestamp=time.time())
                         payload = InventoryPayload(inventory_items=[inventory_item])
                         msg = Message(action=action, type=Type.RESPONSE, component=Component.IOT, message_id=time.time(), status=Status.SUCCESS, timestamp=time.time(), payload=payload)
                         message_queue.put(msg)
