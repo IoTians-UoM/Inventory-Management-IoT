@@ -20,10 +20,13 @@ btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
 
 # Display a test message
-display.display_message("Hello, OLED!", line=1)
-display.display_custom_text(["Raspberry Pi", "OLED Display", "GPIO 2 & 3", "I2C Bus 1"])
-time.sleep(3)
-display.cleanup()
+oled = OLEDController()
+oled.display_message("Hello!", line=1)
+oled.display_message("OLED 128x64", line=2)
+oled.display_message("Big Font!", line=3)
+oled.display_custom_text(["Line 1", "Line 2", "Line 3"])
+time.sleep(5)
+oled.cleanup()
 
 
 def rfid_read_worker():
