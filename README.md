@@ -25,6 +25,13 @@ Our project aims to develop an RFID-based inventory management system that addre
 - Buttons
 - SD Card Storage
 
+## 📊 System Diagrams
+### Block Diagram
+![Block Diagram](https://github.com/IoTians-UoM/Inventory-Management-IoT/blob/main/assets/BlockDiagram.png)
+
+### Circuit Diagram
+![Circuit Diagram](https://github.com/IoTians-UoM/Inventory-Management-IoT/blob/main/assets/circuit%20Diagram.jpg)
+
 ## 🔄 Process Flow
 ### Inventory Operations
 **Stock In Process:**
@@ -69,6 +76,3 @@ Our project aims to develop an RFID-based inventory management system that addre
 - **Gunasekara M.G.M.S** (204062B)
 - **Herath H.M.T.D.** (204073J)
 - **Pemasiri M.P.T.B.S.** (204152C)
-
-
-
