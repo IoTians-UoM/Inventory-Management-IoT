@@ -50,7 +50,8 @@ def mode_switch_worker():
             if btn1.read():
                 oled.clear()
                 oled.display_text("Mode Switch", line=1)
-                oled.display_text(stateMachine.get_state().value, line=2)
+                oled.display_text("to", line=2)
+                oled.display_text(stateMachine.get_state().value, line=3)
                 print("Mode switch button pressed.")
                 stateMachine.transition()
                 message = f"Mode switched to: {stateMachine.get_state()}"

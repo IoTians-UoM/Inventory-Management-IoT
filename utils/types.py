@@ -34,9 +34,9 @@ class Action(Enum):
     MODE_SWITCH = "mode_switch"
 
 class Mode(Enum):
-    INVENTORY_IN = "inventory_in"
-    INVENTORY_OUT = "inventory_out"
-    TAG_WRITE = "tag_write"
+    INVENTORY_IN = "Inventory In"
+    INVENTORY_OUT = "Inventory Out"
+    TAG_WRITE = "Tag Write"
 
 class Product(TypedDict):
     id: str
