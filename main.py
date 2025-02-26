@@ -1,5 +1,6 @@
 from hardware import RFIDController
 import time
+import RPi.GPIO as GPIO
 
 def main():
     rfid = RFIDController()
@@ -24,5 +25,10 @@ def main():
 
     rfid.cleanup()
 
-if __name__ == 'main':
-    main()
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Program interrupted.")
+    finally:
+        GPIO.cleanup()
