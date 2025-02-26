@@ -15,18 +15,9 @@ modes = {
 
 stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
 message_queue = queue.Queue()
-display = OLEDController()
+oled = OLEDController()
 btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
-
-# Display a test message
-oled = OLEDController()
-oled.display_text([
-    "Short text",  # Doesn't scroll
-    "This line is way too long and will scroll!",  # Scrolls
-    "Another long text that also scrolls separately!"  # Scrolls independently
-])
-oled.cleanup()
 
 
 def rfid_read_worker():
@@ -34,20 +25,16 @@ def rfid_read_worker():
     try:
         rfid = RFIDController()
         block = 5  # Change if necessary
+        oled.display_text(["Ready", "Scan RFID tag"])
 
         while True:
-            # Wait for button press
-            print("Waiting for button press...")
-            if btn5.read():
-                print("Button pressed.")
-                uid = rfid.detect_tag()
-                if uid:
-                    message = f"RFID Tag detected: {uid}"
-                    print(message)
-                    message_queue.put(message)
-                else:
-                    print("No RFID tag detected.")
-
+            uid = rfid.detect_tag()
+            if uid:
+                message = f"RFID Tag detected: {uid}"
+                print(message)
+                message_queue.put(message)
+            else:
+                print("No RFID tag detected.")
             time.sleep(0.5)  # Small debounce delay
     except Exception as e:
         print(f"Error in RFID worker: {e}")
@@ -58,6 +45,7 @@ def mode_switch_worker():
     try:
         while True:
             if btn1.read():
+                oled.display_text(["Switching mode..."])
                 print("Mode switch button pressed.")
                 stateMachine.transition()
                 message = f"Mode switched to: {stateMachine.get_state()}"

@@ -12,42 +12,57 @@ class OLEDController:
         serial = i2c(port=i2c_port, address=i2c_address)
         self.device = ssd1306(serial, width=128, height=64)
         self.font = ImageFont.truetype(font_path, font_size)  # Load custom font
+        self.text_buffer = ["", "", ""]  # Stores current text for each line
+        self.offsets = [0, 0, 0]  # Stores scrolling positions
         self.clear()
 
     def clear(self):
-        """Clear the display."""
+        """Clear the display and reset text buffer."""
+        self.text_buffer = ["", "", ""]
+        self.offsets = [0, 0, 0]
         with canvas(self.device) as draw:
             draw.rectangle(self.device.bounding_box, outline="black", fill="black")
 
-    def display_text(self, text_lines, scroll_speed=0.01):
+    def display_text(self, message, line=1, scroll_speed=0.01):
         """
-        Display up to 3 lines at the same time. Scrolls text if it's too long.
+        Display a message on a specific line without clearing other lines.
+        Scrolls if the text is too long.
 
-        :param text_lines: List of text strings (max 3 lines)
-        :param scroll_speed: Speed of scrolling (lower = faster)
+        :param message: The text to display
+        :param line: Line number (1-3)
         """
-        max_lines = 3
-        text_lines = text_lines[:max_lines]  # Ensure max 3 lines
+        if line < 1 or line > 3:
+            raise ValueError("Line number must be between 1 and 3.")
+
+        index = line - 1  # Convert to 0-based index
+        self.text_buffer[index] = message  # Store message in buffer
+        self.offsets[index] = 0  # Reset scrolling position
+
+        # Start scrolling process
+        self._start_scrolling(scroll_speed=scroll_speed)
+
+    def _start_scrolling(self, scroll_speed):
+        """
+        Internal function to handle scrolling for all lines.
+        """
         line_heights = [0, 20, 40]  # Y positions for 3 lines
-        offsets = [0] * len(text_lines)  # Starting positions for each line
+        text_widths = [self.font.getsize(text)[0] for text in self.text_buffer]
+        need_scroll = [width > 128 for width in text_widths]  # Check if scrolling is needed
 
-        # Get text widths
-        text_widths = [self.font.getsize(text)[0] for text in text_lines]
-
-        # Determine if any line needs scrolling
-        need_scroll = [width > 128 for width in text_widths]
-
-        while any(need_scroll):  # Continue scrolling until all fit
+        while any(need_scroll):  # Continue scrolling while any text is too long
             with canvas(self.device) as draw:
-                for i, text in enumerate(text_lines):
-                    x_position = -offsets[i] + 10  # Adjust scrolling position
-                    draw.text((x_position, line_heights[i]), text, font=self.font, fill="white")
+                for i in range(3):
+                    if not self.text_buffer[i]:  # Skip empty lines
+                        continue
 
-                    # Scroll if needed
+                    x_position = -self.offsets[i] + 10  # Adjust scrolling position
+                    draw.text((x_position, line_heights[i]), self.text_buffer[i], font=self.font, fill="white")
+
+                    # Scroll only if text is too long
                     if need_scroll[i]:
-                        offsets[i] += 2  # Move text left
-                        if offsets[i] > text_widths[i]:  # Reset when fully scrolled
-                            offsets[i] = -128
+                        self.offsets[i] += 2  # Move text left
+                        if self.offsets[i] > text_widths[i]:  # Reset when fully scrolled
+                            self.offsets[i] = -128
 
             time.sleep(scroll_speed)  # Adjust scroll speed
 
