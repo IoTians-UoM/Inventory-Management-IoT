@@ -1,32 +1,43 @@
 from enum import Enum
-from typing import TypedDict, Union, List, Optional
+from typing import TypedDict, List, Optional
 
-class Status(str, Enum):
+class Status(Enum):
     SUCCESS = "success"
     ERROR = "error"
 
-class Action(str, Enum):
-    ADD_EDIT = "add_edit"
-    DELETE = "delete"
+class Type(Enum):
+    REQUEST = "request"
+    RESPONSE = "response"
 
-class Type(str, Enum):
-    TAG_WRITE_REQ = "tag_write_req"
-    TAG_WRITE_RESP = "tag_write_resp"
-    SYNC = "sync"
-    PRODUCT = "product"
-    INVENTORY = "inventory"
-    PRODUCT_BY_ID = "product_by_id"
-    INVENTORY_BY_ID = "inventory_by_id"
+class Action(Enum):
+    # Product Actions
+    PRODUCT_ADD_EDIT = "product_add_edit"
+    PRODUCT_DELETE = "product_delete"
+    PRODUCT_GET_ALL = "product_get_all"
+    PRODUCT_GET_BY_ID = "product_get_by_id"
+
+    # Inventory Actions
+    INVENTORY_ADD_EDIT = "inventory_add_edit"
+    INVENTORY_DELETE = "inventory_delete"
+    INVENTORY_GET_ALL = "inventory_get_all"
+    INVENTORY_GET_BY_ID = "inventory_get_by_id"
     INVENTORY_IN = "inventory_in"
     INVENTORY_OUT = "inventory_out"
 
-class Mode(str, Enum):
+    # Tag Write Actions
+    TAG_WRITE = "tag_write"
+
+    # Sync Actions
+    SYNC = "sync"
+
+    # Mode Switch
+    MODE_SWITCH = "mode_switch"
+
+class Mode(Enum):
     INVENTORY_IN = "inventory_in"
     INVENTORY_OUT = "inventory_out"
     TAG_WRITE = "tag_write"
 
-
-# TypedDicts (Equivalent to TypeScript object types)
 class Product(TypedDict):
     id: str
     name: str
@@ -36,41 +47,33 @@ class Product(TypedDict):
 
 class InventoryItem(TypedDict):
     product_id: str
-    product_name: Optional[str]  # product_name is optional
+    product_name: Optional[str]
     quantity: int
     timestamp: str
 
-class ProductAction(TypedDict):
-    product_id: Optional[str]  # product_id is optional
-    action: Action
-    product: Optional[Product]  # product is optional
+class ProductPayload(TypedDict, total=False):
+    product_id: Optional[str]
+    products: Optional[List[Product]]
     timestamp: str
 
-class InventoryAction(TypedDict):
-    inventory_id: Optional[str]  # inventory_id is optional
-    action: Action
-    inventory_item: Optional[InventoryItem]  # inventory_item is optional
+class InventoryPayload(TypedDict, total=False):
+    inventory_id: Optional[str]
+    inventory_items: Optional[List[InventoryItem]]
     timestamp: str
 
 class ModeSwitch(TypedDict):
     mode: Mode
     timestamp: str
 
-# Union type for Message data field
-MessageData = Union[
-    Product, 
-    InventoryItem, 
-    ProductAction, 
-    InventoryAction, 
-    ModeSwitch, 
-    List[Product], 
-    List[InventoryItem], 
-    str
-]
+class SyncPayload(TypedDict):
+    products: List[Product]
+    inventory: List[InventoryItem]
+    timestamp: str
 
-class Message(TypedDict):
+class Message(TypedDict, total=False):
+    action: Action
     type: Type
     message_id: str
-    data: MessageData
-    status: Status
+    payload: Optional[ProductPayload | InventoryPayload | ModeSwitch | SyncPayload | str]
+    status: Optional[Status]
     timestamp: str
