@@ -16,12 +16,6 @@ modes = {
 stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
 message_queue = queue.Queue()
 oled = OLEDController()
-oled.display_text("Short text", line=1)  # Static text
-oled.display_text("This is a long scrolling message on line 2!", line=2)  # Scrolls
-oled.display_text("Another independently scrolling line 3 message!", line=3)  # Scrolls
-time.sleep(5)
-oled.display_text("new dchkduaem", line=1)  # Static text
-time.sleep(5)
 btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
 
@@ -85,17 +79,17 @@ def run_ws_worker():
     asyncio.run(ws_sender_worker())
 
 
-# # Start the RFID worker thread (normal threading)
-# rfid_thread = threading.Thread(target=rfid_read_worker, daemon=True)
-# rfid_thread.start()
+# Start the RFID worker thread (normal threading)
+rfid_thread = threading.Thread(target=rfid_read_worker, daemon=True)
+rfid_thread.start()
 
-# # Start the WebSocket worker inside its own async event loop
-# ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
-# ws_thread.start()
+# Start the WebSocket worker inside its own async event loop
+ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
+ws_thread.start()
 
-# # Start the mode switch worker thread (normal threading)
-# mode_thread = threading.Thread(target=mode_switch_worker, daemon=True)
-# mode_thread.start()
+# Start the mode switch worker thread (normal threading)
+mode_thread = threading.Thread(target=mode_switch_worker, daemon=True)
+mode_thread.start()
 
 
 # Main thread loop
