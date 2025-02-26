@@ -3,21 +3,12 @@ import queue
 import time
 import RPi.GPIO as GPIO
 from hardware import RFIDController
+from hardware import GPIOController
 from utils import WebSocketClient  # Assuming you have this implemented
-
-# Define GPIO pin for button
-BUTTON_PIN = 4
-
-# Setup GPIO for button
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Queue for WebSocket messages
 message_queue = queue.Queue()
-
-# WebSocket client instance
-ws = WebSocketClient("ws://192.168.112.97:8000")
-ws.connect()
+btn1 = GPIOController(4, 'in', 'high')
 
 def rfid_read_worker():
     """Thread worker that listens for button presses and reads RFID data."""
@@ -26,7 +17,7 @@ def rfid_read_worker():
 
     while True:
         # Wait for button press
-        GPIO.wait_for_edge(BUTTON_PIN, GPIO.FALLING)
+        btn1.wait_for_edge('rising')
         print("Button pressed. Reading RFID tag...")
 
         data = rfid.read_data(block)
@@ -38,14 +29,18 @@ def rfid_read_worker():
 
         time.sleep(0.5)  # Small debounce delay
 
-def ws_sender_worker():
+async def ws_sender_worker():
     """Thread worker that sends messages from the queue to WebSocket."""
+    # WebSocket client instance
+    ws = WebSocketClient("ws://192.168.112.97:8000")
+    await ws.connect()
+    
     while True:
         try:
             message = message_queue.get()
             if message:
                 print(f"Sending WebSocket Message: {message}")
-                ws.send_message(message)  # Send via WebSocket
+                await ws.send_message(message)  # Send via WebSocket
                 message_queue.task_done()
         except Exception as e:
             print(f"Error in WebSocket thread: {e}")
@@ -64,5 +59,4 @@ except KeyboardInterrupt:
     print("Program interrupted.")
 finally:
     GPIO.cleanup()
-    ws.disconnect()
     print("Cleaned up resources and exiting.")

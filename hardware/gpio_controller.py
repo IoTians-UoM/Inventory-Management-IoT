@@ -112,3 +112,17 @@ class GPIOController:
         """
         GPIO.cleanup(self.pin)
         print(f"Cleaned up GPIO pin {self.pin}.")
+
+    def wait_for_edge(self, edge, timeout=None):
+        """
+        Wait for an edge on the pin.
+        
+        Parameters:
+          edge: 'rising', 'falling', or 'both'.
+          timeout (float): Timeout in seconds.
+        
+        Returns:
+          The edge that was detected.
+        """
+        edge = GPIO.RISING if edge is 'rising' else GPIO.FALLING if edge is 'falling' else GPIO.BOTH
+        return GPIO.wait_for_edge(self.pin, edge, timeout=timeout)
