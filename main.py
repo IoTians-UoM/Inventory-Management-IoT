@@ -17,15 +17,16 @@ def rfid_read_worker():
 
     while True:
         # Wait for button press
-        btn1.wait_for_edge('rising')
-        print("Button pressed. Reading RFID tag...")
-
-        data = rfid.read_data(block)
-        if data:
-            print(f"RFID Data Read: {data}")
-            message_queue.put(data)  # Queue the message for WebSocket sending
-        else:
-            print("Failed to read data from RFID tag.")
+        print("Waiting for button press...")
+        if btn1.read():
+            print("Button pressed.")
+            uid = rfid.detect_tag()
+            if uid:
+                message = f"RFID Tag detected: {uid}"
+                print(message)
+                message_queue.put(message)
+            else:
+                print("No RFID tag detected.")
 
         time.sleep(0.5)  # Small debounce delay
 
