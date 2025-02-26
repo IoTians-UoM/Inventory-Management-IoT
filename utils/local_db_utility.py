@@ -1,12 +1,11 @@
 from tinydb import TinyDB, Query
-from tinydb.table import Table
-from typing import Type, TypedDict
+from typing import Dict, Type, TypedDict
 
 
 class LocalDBUtility:
     """Utility class for interacting with a local TinyDB database using TypedDict for schema validation."""
 
-    def __init__(self, db_path='db.json', schemas: dict[str, Type[TypedDict]] = None):
+    def __init__(self, db_path='db.json', schemas: Dict[str, Type[TypedDict]] = None):
         """
         Initialize the database with TypedDict-based schemas.
         :param db_path: Path to the TinyDB JSON file.
@@ -16,7 +15,7 @@ class LocalDBUtility:
         self.query = Query()
         self.schemas = schemas if schemas else {}
 
-    def get_table(self, table_name) -> Table:
+    def get_table(self, table_name):
         """Retrieve a specific table from the database."""
         return self.db.table(table_name)
 
@@ -25,9 +24,16 @@ class LocalDBUtility:
         if table_name in self.schemas:
             expected_fields = set(self.schemas[table_name].__annotations__.keys())
             actual_fields = set(data.keys())
-            if not expected_fields.issubset(actual_fields):
-                missing_fields = expected_fields - actual_fields
+
+            missing_fields = expected_fields - actual_fields
+            extra_fields = actual_fields - expected_fields
+
+            if missing_fields:
                 raise ValueError(f"Schema validation failed for '{table_name}'. Missing fields: {missing_fields}")
+
+            if extra_fields:
+                print(f"Warning: Extra fields found in '{table_name}': {extra_fields}")
+
         return True
 
     def insert(self, table_name, data):
@@ -37,27 +43,21 @@ class LocalDBUtility:
             self.get_table(table_name).insert(data)
             print(f"Data inserted successfully into '{table_name}'.")
         except Exception as e:
-            print(f"Insert failed in '{table_name}': {e}")
+            raise RuntimeError(f"Insert failed in '{table_name}': {e}")
 
     def read_all(self, table_name):
         """Read all records from the specified table."""
         try:
-            data = self.get_table(table_name).all()
-            print(f"Data read successfully from '{table_name}'.")
-            return data
+            return self.get_table(table_name).all()
         except Exception as e:
-            print(f"Read failed in '{table_name}': {e}")
-            return []
+            raise RuntimeError(f"Read failed in '{table_name}': {e}")
 
     def search(self, table_name, field, value):
         """Search for records where field == value in the specified table."""
         try:
-            results = self.get_table(table_name).search(self.query[field] == value)
-            print(f"Search in '{table_name}' completed: {results}")
-            return results
+            return self.get_table(table_name).search(self.query[field] == value)
         except Exception as e:
-            print(f"Search failed in '{table_name}': {e}")
-            return []
+            raise RuntimeError(f"Search failed in '{table_name}': {e}")
 
     def update(self, table_name, updates, field, value):
         """Update records in the specified table."""
@@ -65,7 +65,7 @@ class LocalDBUtility:
             self.get_table(table_name).update(updates, self.query[field] == value)
             print(f"Update successful in '{table_name}'.")
         except Exception as e:
-            print(f"Update failed in '{table_name}': {e}")
+            raise RuntimeError(f"Update failed in '{table_name}': {e}")
 
     def delete(self, table_name, field, value):
         """Delete records in the specified table."""
@@ -73,7 +73,7 @@ class LocalDBUtility:
             self.get_table(table_name).remove(self.query[field] == value)
             print(f"Delete successful in '{table_name}'.")
         except Exception as e:
-            print(f"Delete failed in '{table_name}': {e}")
+            raise RuntimeError(f"Delete failed in '{table_name}': {e}")
 
     def clear(self, table_name):
         """Clear all records from the specified table."""
@@ -81,7 +81,7 @@ class LocalDBUtility:
             self.get_table(table_name).truncate()
             print(f"Table '{table_name}' cleared.")
         except Exception as e:
-            print(f"Clear failed in '{table_name}': {e}")
+            raise RuntimeError(f"Clear failed in '{table_name}': {e}")
 
     def upsert(self, table_name, data, field):
         """
@@ -97,12 +97,10 @@ class LocalDBUtility:
             existing_records = table.search(self.query[field] == data.get(field))
 
             if existing_records:
-                # Update existing record(s)
                 table.update(data, self.query[field] == data.get(field))
                 print(f"Upsert: Existing record updated in '{table_name}'.")
             else:
-                # Insert new record
                 table.insert(data)
                 print(f"Upsert: New record inserted into '{table_name}'.")
         except Exception as e:
-            print(f"Upsert failed in '{table_name}': {e}")
+            raise RuntimeError(f"Upsert failed in '{table_name}': {e}")
