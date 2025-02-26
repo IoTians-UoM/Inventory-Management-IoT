@@ -4,7 +4,7 @@ import RPi.GPIO as GPIO
 
 def main():
     rfid = RFIDController()
-    block = 8         # Block (sector) to write/read (verify your tag's writable block)
+    block = 5         # Block (sector) to write/read (verify your tag's writable block)
     data_to_write = "Hello RFID"
 
     print("Please keep the tag near the reader.")

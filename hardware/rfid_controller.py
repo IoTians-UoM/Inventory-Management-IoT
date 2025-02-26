@@ -16,7 +16,7 @@ class RFIDController:
         if status == self.reader.MI_OK:
             (status, uid) = self.reader.MFRC522_Anticoll()
             if status == self.reader.MI_OK:
-                print("Tag detected, UID:", uid)
+                print("Tag detected, UID:", uid, "Type:", tag_type)
                 return uid
         return None
 
@@ -91,5 +91,5 @@ class RFIDController:
 
     def cleanup(self):
         """Clean up GPIO resources."""
-        GPIO.cleanup()
+        GPIO.cleanup(25)
         print("Cleaned up GPIO and RFID resources.")
