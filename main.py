@@ -94,9 +94,10 @@ def run_ws_worker():
 
 # Main thread loop
 try:
-    oled.display_text("Ready", line=1)
-    oled.display_text("Scan RFID tag", line=2)
-    oled.display_text("Mode Switch", line=3)
+    # oled.display_text("Ready", line=1)
+    # oled.display_text("Scan RFID tag", line=2)
+    # oled.display_text("Mode Switch", line=3)
+    oled.display_text(["Ready", "Scan RFID tag", "Mode Switch"])
     while True:
         time.sleep(1)  # Keep main thread running
 except KeyboardInterrupt:
