@@ -45,7 +45,7 @@ def mode_switch_worker():
         if btn1.read():
             print("Mode switch button pressed.")
             stateMachine.transition()
-            message = f"Mode switched to: {stateMachine.current_mode}"
+            message = f"Mode switched to: {stateMachine.get_state()}"
             print(message)
             message_queue.put(message)            
         time.sleep(0.5)  # Small debounce delay
