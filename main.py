@@ -24,13 +24,12 @@ def rfid_worker():
     """Thread worker that listens for button presses and reads RFID data."""
     try:
         rfid = RFIDController()
-        oled.display_text("Ready", line=1)
-        oled.display_text("Scan RFID tag", line=2)
 
         while True:
             uid = rfid.detect_tag()
             mode = stateMachine.get_state()
             if uid:
+                oled.clear()
                 if mode == Mode.TAG_WRITE:
                     oled.display_text("Tag Write", line=1)
                     oled.display_text("Scan RFID tag", line=2)
