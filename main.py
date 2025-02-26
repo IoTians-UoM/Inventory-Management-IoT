@@ -32,6 +32,8 @@ def rfid_read_worker():
             if uid:
                 message = f"RFID Tag: {uid}"
                 print(message)
+                oled.clear()
+                oled.display_text("RFID Tag Detected", line=1)
                 oled.display_text(message, line=3)  # Add message to display queue
                 message_queue.put(message)
             else:
@@ -46,8 +48,9 @@ def mode_switch_worker():
     try:
         while True:
             if btn1.read():
+                oled.clear()
                 oled.display_text("Mode Switch", line=1)
-                oled.display_text(stateMachine.get_state(), line=2)
+                oled.display_text(stateMachine.get_state().value, line=2)
                 print("Mode switch button pressed.")
                 stateMachine.transition()
                 message = f"Mode switched to: {stateMachine.get_state()}"
