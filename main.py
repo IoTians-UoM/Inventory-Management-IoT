@@ -86,39 +86,45 @@ def mode_switch_worker():
 
 
 async def ws_worker():
-    """Async worker that handles WebSocket communication (sending and receiving)."""
+    """Async worker that handles WebSocket communication (sending and receiving) with reconnection logic."""
     uri = "ws://192.168.112.97:8000"
 
-    async with websockets.connect(uri) as ws:
-        print("Connected to WebSocket server")
+    while True:  # Keep trying to connect if the WebSocket is down
+        try:
+            async with websockets.connect(uri) as ws:
+                print("Connected to WebSocket server")
 
-        async def send_messages():
-            """Send messages from the queue to WebSocket."""
-            while True:
-                try:
-                    message = await asyncio.to_thread(message_queue.get)  # Get message in async way
-                    if message:
-                        print(f"Sending WebSocket Message: {message}")
-                        await ws.send(json.dumps(message))
-                        message_queue.task_done()
-                except Exception as e:
-                    print(f"Error sending message: {e}")
+                async def send_messages():
+                    """Send messages from the queue to WebSocket."""
+                    while True:
+                        try:
+                            message = await asyncio.to_thread(message_queue.get)  # Get message in async way
+                            if message:
+                                print(f"Sending WebSocket Message: {message}")
+                                await ws.send(json.dumps(message))
+                                message_queue.task_done()
+                        except Exception as e:
+                            print(f"Error sending message: {e}")
 
-        async def receive_messages():
-            """Listen for incoming messages from WebSocket."""
-            while True:
-                try:
-                    response = await ws.recv()  # Receive a message
-                    print(f"Received WebSocket Message: {response}")
-                    # Handle the received message as needed
-                except websockets.exceptions.ConnectionClosed:
-                    print("WebSocket connection closed")
-                    break
-                except Exception as e:
-                    print(f"Error receiving message: {e}")
+                async def receive_messages():
+                    """Listen for incoming messages from WebSocket."""
+                    while True:
+                        try:
+                            response = await ws.recv()  # Receive a message
+                            print(f"Received WebSocket Message: {response}")
+                            # Handle the received message as needed
+                        except websockets.exceptions.ConnectionClosed:
+                            print("WebSocket connection closed, attempting to reconnect...")
+                            break
+                        except Exception as e:
+                            print(f"Error receiving message: {e}")
 
-        # Run both send and receive tasks concurrently
-        await asyncio.gather(send_messages(), receive_messages())
+                # Run both send and receive tasks concurrently
+                await asyncio.gather(send_messages(), receive_messages())
+
+        except (websockets.exceptions.WebSocketException, OSError) as e:
+            print(f"WebSocket connection failed: {e}, retrying in 5 seconds...")
+            await asyncio.sleep(5)  # Retry connection after 5 seconds
 
 def run_ws_worker():
     """Runs the async WebSocket worker inside an asyncio event loop."""
