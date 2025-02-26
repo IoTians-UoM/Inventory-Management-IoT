@@ -161,9 +161,10 @@ def process_messages():
                         elif btn5.read():
                             confirm = True
                             break;
-                        else:
+                        elif btn4.read() or btn1.read():
                             break;
                         time.sleep(0.2)
+                        print(f'qty {qty}')
                 
                     oled.clear()
                     if confirm:
