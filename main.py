@@ -19,6 +19,10 @@ oled = OLEDController()
 btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
 
+oled.display_text("Welcome to", line=1)
+oled.display_text("Inventory System", line=2)
+oled.display_text("By IoTians", line=3)
+time.sleep(3)
 
 def rfid_worker():
     """Thread worker that listens for button presses and reads RFID data."""
