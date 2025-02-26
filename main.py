@@ -59,7 +59,7 @@ def rfid_worker():
                     oled.display_text(f"{data}", line=3)
                     desc = f"Inventory {mode}: {uid}, {data}"
                     print(desc)
-                    message = Message(action=Action.PRODUCT_GET_BY_ID.value, type=Type.REQUEST.value, message_id=uid, payload={"product_id": data}, timestamp=str(time.time()))
+                    message = Message(action=Action.PRODUCT_GET_BY_ID.value, type=Type.REQUEST.value, message_id=uid, payload={"product_id": '1'}, timestamp=str(time.time()))
                     message_queue.put(message)
             time.sleep(0.5)
     except Exception as e:
