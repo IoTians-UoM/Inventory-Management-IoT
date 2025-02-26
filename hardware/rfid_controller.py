@@ -39,7 +39,13 @@ class RFIDController:
         data_str = data.ljust(16)[:16]
         data_list = [ord(c) for c in data_str]
         print(f"Writing to block {block}: '{data_str}'")
-        status = self.reader.MFRC522_Write(block, data_list)
+        # status = self.reader.MFRC522_Write(block, data_list)
+        try:
+            status = self.reader.MFRC522_Write(block, data_list)
+        except Exception as e:
+            print(f"Error while writing to block {block}: {e}")
+            return False
+
         print("MFRC522_Write returned:", status)
         if status == self.reader.MI_OK:
             print("Data successfully written.")
