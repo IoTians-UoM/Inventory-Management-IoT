@@ -79,21 +79,24 @@ def run_ws_worker():
     asyncio.run(ws_sender_worker())
 
 
-# Start the RFID worker thread (normal threading)
-rfid_thread = threading.Thread(target=rfid_read_worker, daemon=True)
-rfid_thread.start()
+# # Start the RFID worker thread (normal threading)
+# rfid_thread = threading.Thread(target=rfid_read_worker, daemon=True)
+# rfid_thread.start()
 
-# Start the WebSocket worker inside its own async event loop
-ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
-ws_thread.start()
+# # Start the WebSocket worker inside its own async event loop
+# ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
+# ws_thread.start()
 
-# Start the mode switch worker thread (normal threading)
-mode_thread = threading.Thread(target=mode_switch_worker, daemon=True)
-mode_thread.start()
+# # Start the mode switch worker thread (normal threading)
+# mode_thread = threading.Thread(target=mode_switch_worker, daemon=True)
+# mode_thread.start()
 
 
 # Main thread loop
 try:
+    oled.display_text("Ready", line=1)
+    oled.display_text("Scan RFID tag", line=2)
+    oled.display_text("Mode Switch", line=3)
     while True:
         time.sleep(1)  # Keep main thread running
 except KeyboardInterrupt:
