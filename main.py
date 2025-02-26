@@ -19,6 +19,7 @@ oled = OLEDController()
 oled.display_text("Ready", line=1)
 oled.display_text("Scan RFID tag", line=2)
 oled.display_text("Mode Switch", line=3)
+time.sleep(5)
 btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
 
