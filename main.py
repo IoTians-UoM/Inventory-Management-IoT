@@ -4,7 +4,9 @@ import time
 import asyncio
 import RPi.GPIO as GPIO
 from hardware import RFIDController, GPIOController, StateMachine, OLEDController
-from utils import WebSocketClient, Mode
+from utils import Mode
+import websockets
+import json
 
 
 modes = {
@@ -33,7 +35,6 @@ def rfid_worker():
             mode = stateMachine.get_state()
             print(f"Current mode: {mode}")
             if mode == Mode.TAG_WRITE:
-                oled.clear()
                 oled.display_text("Tag Write", line=1)
                 oled.display_text("Scan RFID tag", line=2)
                 uid = rfid.detect_tag()
@@ -45,7 +46,6 @@ def rfid_worker():
                     print(message)
                     message_queue.put(message)
             else:
-                oled.clear()
                 if mode == Mode.INVENTORY_IN:
                     oled.display_text("Inventory In", line=1)
                 else:
@@ -75,6 +75,7 @@ def mode_switch_worker():
                 oled.display_text("to", line=2)
                 stateMachine.transition()
                 oled.display_text(stateMachine.get_state().value, line=3)
+                time.sleep(1)
                 message = f"Mode switched to: {stateMachine.get_state()}"
                 print(message)
                 message_queue.put(message)
@@ -83,33 +84,53 @@ def mode_switch_worker():
         print(f"Error in mode switch worker: {e}")
 
 
-async def ws_sender_worker():
-    """Async worker that sends messages from the queue to WebSocket."""
-    ws = WebSocketClient("ws://192.168.112.97:8000")
-    await ws.connect()
-    
-    while True:
-        try:
-            message = await asyncio.to_thread(message_queue.get)  # Get message in async way
-            if message:
-                print(f"Sending WebSocket Message: {message}")
-                await ws.send_message('detect', message)  # Send via WebSocket
-                message_queue.task_done()
-        except Exception as e:
-            print(f"Error in WebSocket thread: {e}")
+async def ws_worker():
+    """Async worker that handles WebSocket communication (sending and receiving)."""
+    uri = "ws://192.168.112.97:8000"
+
+    async with websockets.connect(uri) as ws:
+        print("Connected to WebSocket server")
+
+        async def send_messages():
+            """Send messages from the queue to WebSocket."""
+            while True:
+                try:
+                    message = await asyncio.to_thread(message_queue.get)  # Get message in async way
+                    if message:
+                        print(f"Sending WebSocket Message: {message}")
+                        await ws.send(json.dumps({'type': 'detect', 'data': message}))
+                        message_queue.task_done()
+                except Exception as e:
+                    print(f"Error sending message: {e}")
+
+        async def receive_messages():
+            """Listen for incoming messages from WebSocket."""
+            while True:
+                try:
+                    response = await ws.recv()  # Receive a message
+                    print(f"Received WebSocket Message: {response}")
+                    # Handle the received message as needed
+                except websockets.exceptions.ConnectionClosed:
+                    print("WebSocket connection closed")
+                    break
+                except Exception as e:
+                    print(f"Error receiving message: {e}")
+
+        # Run both send and receive tasks concurrently
+        await asyncio.gather(send_messages(), receive_messages())
 
 def run_ws_worker():
     """Runs the async WebSocket worker inside an asyncio event loop."""
-    asyncio.run(ws_sender_worker())
+    asyncio.run(ws_worker())
 
 
 # Start the RFID worker thread (normal threading)
 rfid_thread = threading.Thread(target=rfid_worker, daemon=True)
 rfid_thread.start()
 
-# # Start the WebSocket worker inside its own async event loop
-# ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
-# ws_thread.start()
+# Start the WebSocket worker inside its own async event loop
+ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
+ws_thread.start()
 
 # Start the mode switch worker thread (normal threading)
 mode_thread = threading.Thread(target=mode_switch_worker, daemon=True)
