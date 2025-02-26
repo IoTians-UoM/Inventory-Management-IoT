@@ -113,7 +113,7 @@ class GPIOController:
         GPIO.cleanup(self.pin)
         print(f"Cleaned up GPIO pin {self.pin}.")
 
-    def wait_for_edge(self, edge, timeout=None):
+    def wait_for_edge(self, edge, timeout=5):
         """
         Wait for an edge on the pin.
         
