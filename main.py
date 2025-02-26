@@ -4,7 +4,7 @@ import time
 import asyncio
 import RPi.GPIO as GPIO
 from hardware import RFIDController, GPIOController, StateMachine, OLEDController
-from utils import Mode
+from utils import Mode, Message, Action, Type
 import websockets
 import json
 
@@ -57,8 +57,9 @@ def rfid_worker():
                     data = rfid.read_data(5)
                     time.sleep(1)
                     oled.display_text(f"{data}", line=3)
-                    message = f"Inventory {mode}: {uid}, {data}"
-                    print(message)
+                    desc = f"Inventory {mode}: {uid}, {data}"
+                    print(desc)
+                    message = Message(action=Action.PRODUCT_GET_BY_ID.value, type=Type.REQUEST.value, message_id=uid, payload={"product_id": data}, timestamp=str(time.time()))
                     message_queue.put(message)
             time.sleep(0.5)
     except Exception as e:
@@ -98,7 +99,7 @@ async def ws_worker():
                     message = await asyncio.to_thread(message_queue.get)  # Get message in async way
                     if message:
                         print(f"Sending WebSocket Message: {message}")
-                        await ws.send(json.dumps({'type': 'detect', 'data': message}))
+                        await ws.send(json.dumps(message))
                         message_queue.task_done()
                 except Exception as e:
                     print(f"Error sending message: {e}")
