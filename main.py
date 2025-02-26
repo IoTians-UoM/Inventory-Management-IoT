@@ -1,6 +1,7 @@
 import threading
 import queue
 import time
+import asyncio
 import RPi.GPIO as GPIO
 from hardware import RFIDController
 from hardware import GPIOController
@@ -31,14 +32,13 @@ def rfid_read_worker():
         time.sleep(0.5)  # Small debounce delay
 
 async def ws_sender_worker():
-    """Thread worker that sends messages from the queue to WebSocket."""
-    # WebSocket client instance
+    """Async worker that sends messages from the queue to WebSocket."""
     ws = WebSocketClient("ws://192.168.112.97:8000")
     await ws.connect()
     
     while True:
         try:
-            message = message_queue.get()
+            message = await asyncio.to_thread(message_queue.get)  # Get message in async way
             if message:
                 print(f"Sending WebSocket Message: {message}")
                 await ws.send_message(message)  # Send via WebSocket
@@ -46,11 +46,16 @@ async def ws_sender_worker():
         except Exception as e:
             print(f"Error in WebSocket thread: {e}")
 
-# Start the worker threads
-rfid_thread = threading.Thread(target=rfid_read_worker, daemon=True)
-ws_thread = threading.Thread(target=ws_sender_worker, daemon=True)
+def run_ws_worker():
+    """Runs the async WebSocket worker inside an asyncio event loop."""
+    asyncio.run(ws_sender_worker())
 
+# Start the RFID worker thread (normal threading)
+rfid_thread = threading.Thread(target=rfid_read_worker, daemon=True)
 rfid_thread.start()
+
+# Start the WebSocket worker inside its own async event loop
+ws_thread = threading.Thread(target=run_ws_worker, daemon=True)
 ws_thread.start()
 
 try:
