@@ -29,6 +29,7 @@ oled.display_text("Welcome to", line=1)
 oled.display_text("Inventory System", line=2)
 oled.display_text("By IoTians", line=3)
 time.sleep(3)
+oled.clear()
 
 def rfid_worker():
     """Thread worker that listens for button presses and reads RFID data."""
@@ -44,7 +45,7 @@ def rfid_worker():
                 uid = rfid.detect_tag()
                 if uid:
                     oled.display_text("writing...", line=3)
-                    rfid.write_data(5, "Hello, RFID!")
+                    rfid.write_data(8, "Hello, RFID!")
                     time.sleep(1)
                     message = f"Tag Write: {uid}"
                     print(message)
@@ -58,7 +59,7 @@ def rfid_worker():
                 uid = rfid.detect_tag()
                 if uid:
                     oled.display_text("reading...", line=3)
-                    data = rfid.read_data(5)
+                    data = rfid.read_data(8)
                     time.sleep(1)
                     oled.display_text(f"{data}", line=3)
                     desc = f"Inventory {mode}: {uid}, {data}"
@@ -142,13 +143,12 @@ def process_messages():
         try:
             message = processing_queue.get()
             if message:
-                data = json.loads(message)  # Parse JSON message
-                print(f"Processing Message: {data}")
+                print(f"Processing Message: {message}")
                 oled.clear()
 
                 # Perform actions based on message type
-                if data.get("action") == Action.PRODUCT_GET_BY_ID.value:
-                    oled.display_text(data.get('payload').get('products').get('name'), line=1)
+                if message.get("action") == Action.PRODUCT_GET_BY_ID.value:
+                    oled.display_text(message.get('payload').get('products').get('name'), line=1)
 
                     qty = 1
                     confirm = False
@@ -170,7 +170,7 @@ def process_messages():
                         oled.display_text('confirmed', line=2)
                         mode = stateMachine.get_state()
                         action = Action.INVENTORY_IN if mode == Mode.INVENTORY_IN else Action.INVENTORY_OUT
-                        inventory_item = InventoryItem(product_id=data.get('payload').get('products').get('id'),quantity=qty, timestamp=time.time())
+                        inventory_item = InventoryItem(product_id=message.get('payload').get('products').get('id'),quantity=qty, timestamp=time.time())
                         payload = InventoryPayload(inventory_items=[inventory_item])
                         msg = Message(action=action, type=Type.RESPONSE, component=Component.IOT, message_id=time.time(), status=Status.SUCCESS, timestamp=time.time(), payload=payload)
                         message_queue.put(msg)
