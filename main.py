@@ -16,9 +16,11 @@ modes = {
 stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
 message_queue = queue.Queue()
 oled = OLEDController()
-oled.display_text("Ready", line=1)
-oled.display_text("Scan RFID tag", line=2)
-oled.display_text("Mode Switch msdnvckjsndc", line=3)
+oled.display_text("Short text", line=1)  # Static text
+oled.display_text("This is a long scrolling message on line 2!", line=2)  # Scrolls
+oled.display_text("Another independently scrolling line 3 message!", line=3)  # Scrolls
+time.sleep(5)
+oled.display_text("new dchkduaem", line=1)  # Static text
 time.sleep(5)
 btn5 = GPIOController(4, 'in', 'high')
 btn1 = GPIOController(24, 'in', 'high')
