@@ -38,28 +38,31 @@ class OLEDController:
                     for line, text in self.text_lines.items():
                         y_position = (line - 1) * 20
 
-                        if text:
-                            text_width, _ = self.font.getsize(text)
+                        if not isinstance(text, str):  # Ensure text is a valid string
+                            text = ""
 
-                            if text_width <= 128:
-                                # Static text (fits on screen)
-                                draw.text((10, y_position), text, font=self.font, fill="white")
+                        text_width, _ = self.font.getsize(text)  # Safe to call now
+
+                        if text_width <= 128:
+                            # Static text (fits on screen)
+                            draw.text((10, y_position), text, font=self.font, fill="white")
+                            self.scroll_offsets[line] = 0
+                            self.scroll_enabled[line] = False
+                        else:
+                            # Scrolling text (too long for screen)
+                            self.scroll_enabled[line] = True
+                            x_position = -self.scroll_offsets[line] + 10
+                            draw.text((x_position, y_position), text, font=self.font, fill="white")
+
+                            # Move text left for scrolling effect
+                            self.scroll_offsets[line] += 2
+
+                            # Reset scroll position when text fully moves off-screen
+                            if self.scroll_offsets[line] > text_width + 10:
                                 self.scroll_offsets[line] = 0
-                                self.scroll_enabled[line] = False
-                            else:
-                                # Scrolling text (too long for screen)
-                                self.scroll_enabled[line] = True
-                                x_position = -self.scroll_offsets[line] + 10
-                                draw.text((x_position, y_position), text, font=self.font, fill="white")
-
-                                # Move text left for scrolling effect
-                                self.scroll_offsets[line] += 2
-
-                                # Reset scroll position when the text fully moves off-screen
-                                if self.scroll_offsets[line] > text_width + 10:
-                                    self.scroll_offsets[line] = 0
 
             time.sleep(0.05)  # Smooth refresh rate
+
 
     def _process_messages(self):
         """Thread that processes the display queue and updates text on the OLED."""
@@ -84,7 +87,11 @@ class OLEDController:
         if line < 1 or line > 3:
             raise ValueError("Line number must be between 1 and 3.")
 
+        if not isinstance(message, str):
+            message = str(message)  # Convert to string if needed
+
         self.text_queue.put((line, message))  # Add message to queue
+
 
     def stop(self):
         """Stop the display update loop and clear the screen."""
