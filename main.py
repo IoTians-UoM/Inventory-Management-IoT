@@ -141,7 +141,7 @@ def process_messages():
     """Worker function to process messages from the processing queue."""
     while True:
         try:
-            message = processing_queue.get()
+            message = processing_queue.get()[0]
             if message:
                 print(f"Processing Message: {message}")
                 oled.clear()
