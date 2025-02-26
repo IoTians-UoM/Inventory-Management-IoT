@@ -70,9 +70,15 @@ class SyncPayload(TypedDict):
     inventory: List[InventoryItem]
     timestamp: str
 
+class Component(Enum):
+    WEB = "web"
+    IOT = "iot"
+    API = "api"
+
 class Message(TypedDict, total=False):
     action: Action
     type: Type
+    component: Component
     message_id: str
     payload: Optional[ProductPayload | InventoryPayload | ModeSwitch | SyncPayload | str]
     status: Optional[Status]
