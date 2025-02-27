@@ -10,7 +10,7 @@ class RFIDController:
         try:
             print("Hold a tag near the reader")
             id, text = self.reader.read()
-            print("Tag detected, ID:", id)
+            print("Tag detected, ID:", id, text)
             return id
         except Exception as e:
             print("Error reading tag:", e)
@@ -29,9 +29,9 @@ class RFIDController:
     def read_data(self, block):
         try:
             print("Reading tag...")
-            data = self.reader.read()
-            print(f"Data read from tag: '{data}'")
-            return data
+            id, text = self.reader.read()
+            print(f"Data read from tag: '{text}'")
+            return id, text
         except Exception as e:
             print("Error reading data:", e)
             return None

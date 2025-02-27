@@ -76,7 +76,7 @@ def rfid_worker():
                         print(f"Failed to write tag: {tag_to_write}")
                         # oled.display_text("Failed!", line=3)
                 else:
-                    data = rfid.read_data(5)
+                    id, data = rfid.read_data(5)
                     if data:
                         print(f"Reading Tag: {data}")
                         # oled.display_text("Reading tag...", line=3)
@@ -84,21 +84,22 @@ def rfid_worker():
                         # oled.display_text("Success!", line=3)
                         message_queue.put(f"Tag Read: {data}")
                     else:
+                        print("Failed to read tag")
                         # oled.display_text("Failed!", line=3)
 
                         # Lookup product ID from local DB using RFID UID
                         # product_id = get_product_id_by_rfid(uid)
 
-                        message = Message(
-                            action=Action.PRODUCT_GET_BY_ID.value,
-                            type=Type.REQUEST.value,
-                            message_id='1',
-                            payload={
-                                "product_id": '1',  # <-- Hardcoded line commented out
-                                # "product_id": product_id  # <-- Fetched from DB
-                            },
-                            timestamp=str(time.time())
-                        )
+                        # message = Message(
+                        #     action=Action.PRODUCT_GET_BY_ID.value,
+                        #     type=Type.REQUEST.value,
+                        #     message_id='1',
+                        #     payload={
+                        #         "product_id": '1',  # <-- Hardcoded line commented out
+                        #         # "product_id": product_id  # <-- Fetched from DB
+                        #     },
+                        #     timestamp=str(time.time())
+                        # )
                         # message_queue.put(message)  # Allow time to read
             time.sleep(0.5)
     except Exception as e:
