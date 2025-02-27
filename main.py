@@ -25,7 +25,7 @@ tag_to_write = ''
 
 
 # Hardware Components
-oled = OLEDController()
+# oled = OLEDController()
 btn1 = GPIOController(24, 'in', 'high')
 btn2 = GPIOController(22, 'in', 'high')
 btn3 = GPIOController(27, 'in', 'high')
@@ -38,11 +38,11 @@ schemas = {'product': Product, 'inventory': InventoryItem}
 localDB = LocalDBUtility('db.json', schemas)
 
 # Startup OLED Display
-oled.display_text("Welcome to", line=1)
-oled.display_text("Inventory System", line=2)
-oled.display_text("By IoTians", line=3)
-time.sleep(3)
-oled.clear()
+# oled.display_text("Welcome to", line=1)
+# oled.display_text("Inventory System", line=2)
+# oled.display_text("By IoTians", line=3)
+# time.sleep(3)
+# oled.clear()
 
 
 def rfid_worker():
@@ -53,52 +53,52 @@ def rfid_worker():
         rfid = RFIDController()
         while True:
             mode = stateMachine.get_state()
-            oled.clear()
-            oled.display_text(f"{mode.value}", line=1)
+            # oled.clear()
+            # oled.display_text(f"{mode.value}", line=1)
 
             if rfid.detect_tag():
-                oled.display_text("Processing...", line=3)
+                # oled.display_text("Processing...", line=3)
                 buzz.write(1)
                 time.sleep(0.1)
                 buzz.write(0)
 
                 if mode == Mode.TAG_WRITE:
                     if tag_to_write == '':
-                        oled.display_text("No data to write", line=3)
+                        # oled.display_text("No data to write", line=3)
                         return
                     if rfid.write_data(5, tag_to_write):
                         print(f"Writing Tag: {tag_to_write}")
-                        oled.display_text("Writing tag...", line=3)
+                        # oled.display_text("Writing tag...", line=3)
                         time.sleep(0.5)
-                        oled.display_text("Success!", line=3)
+                        # oled.display_text("Success!", line=3)
                         message_queue.put(f"Tag Write: {tag_to_write}")
                     else:
-                        oled.display_text("Failed!", line=3)
+                        # oled.display_text("Failed!", line=3)
                 else:
                     data = rfid.read_data(5)
                     if data:
                         print(f"Reading Tag: {data}")
-                        oled.display_text("Reading tag...", line=3)
+                        # oled.display_text("Reading tag...", line=3)
                         time.sleep(0.5)
-                        oled.display_text("Success!", line=3)
+                        # oled.display_text("Success!", line=3)
                         message_queue.put(f"Tag Read: {data}")
                     else:
-                        oled.display_text("Failed!", line=3)
+                        # oled.display_text("Failed!", line=3)
 
-                    # Lookup product ID from local DB using RFID UID
-                    # product_id = get_product_id_by_rfid(uid)
+                        # Lookup product ID from local DB using RFID UID
+                        # product_id = get_product_id_by_rfid(uid)
 
-                    # message = Message(
-                    #     action=Action.PRODUCT_GET_BY_ID.value,
-                    #     type=Type.REQUEST.value,
-                    #     message_id=uid,
-                    #     payload={
-                    #         "product_id": '1',  # <-- Hardcoded line commented out
-                    #         # "product_id": product_id  # <-- Fetched from DB
-                    #     },
-                    #     timestamp=str(time.time())
-                    # )
-                    # message_queue.put(message)  # Allow time to read
+                        message = Message(
+                            action=Action.PRODUCT_GET_BY_ID.value,
+                            type=Type.REQUEST.value,
+                            message_id='1',
+                            payload={
+                                "product_id": '1',  # <-- Hardcoded line commented out
+                                # "product_id": product_id  # <-- Fetched from DB
+                            },
+                            timestamp=str(time.time())
+                        )
+                        # message_queue.put(message)  # Allow time to read
             time.sleep(0.5)
     except Exception as e:
         print(f"Error in RFID worker: {e}")
@@ -108,14 +108,14 @@ def mode_switch_worker():
     try:
         while True:
             if btn1.read():
-                oled.clear()
-                oled.display_text("Mode Switching...", line=1)
+                # oled.clear()
+                # oled.display_text("Mode Switching...", line=1)
                 time.sleep(0.5)
                 
                 stateMachine.transition()
-                oled.clear()
-                oled.display_text(f"Switched to:", line=1)
-                oled.display_text(f"{stateMachine.get_state().value}", line=2)
+                # oled.clear()
+                # oled.display_text(f"Switched to:", line=1)
+                # oled.display_text(f"{stateMachine.get_state().value}", line=2)
                 
                 buzz.write(1)
                 time.sleep(0.1)
@@ -173,9 +173,9 @@ def handle_tag_write_request(message):
     global tag_to_write
     tag_to_write = message.get('payload').get('product_id')
 
-    oled.clear()
-    oled.display_text("Tag Write Mode", line=1)
-    oled.display_text("Place RFID Tag", line=2)
+    # oled.clear()
+    # oled.display_text("Tag Write Mode", line=1)
+    # oled.display_text("Place RFID Tag", line=2)
 
     buzz.write(1)
     time.sleep(0.2)
@@ -206,14 +206,14 @@ def inventory_operations(message):
     product_name = product.get('name')
     product_id = product.get('id')
 
-    oled.clear()
-    oled.display_text(product_name, line=1)
-    oled.display_text('   -   +   o   x', line=3)  # Buttons legend
+    # oled.clear()
+    # oled.display_text(product_name, line=1)
+    # oled.display_text('   -   +   o   x', line=3)  # Buttons legend
 
     qty = 1
     confirm = False
     while True:
-        oled.display_text(f"Qty: {qty}", line=2)
+        # oled.display_text(f"Qty: {qty}", line=2)
 
         if btn2.read():  # Decrease quantity
             if qty > 1:
@@ -227,9 +227,9 @@ def inventory_operations(message):
             break
         time.sleep(0.2)
 
-    oled.clear()
+    # oled.clear()
     if confirm:
-        oled.display_text('Confirmed!', line=2)
+        # oled.display_text('Confirmed!', line=2)
         buzz.write(1)
         time.sleep(0.3)
         buzz.write(0)
@@ -252,13 +252,13 @@ def inventory_operations(message):
         )
         message_queue.put(msg)
     else:
-        oled.display_text('Cancelled!', line=2)
+        # oled.display_text('Cancelled!', line=2)
         buzz.write(1)
         time.sleep(0.1)
         buzz.write(0)
     
     time.sleep(1)
-    oled.clear()
+    # oled.clear()
 
 def sync_manager(message):
     products_sync_queue.put(message.get('payload').get('products'))
