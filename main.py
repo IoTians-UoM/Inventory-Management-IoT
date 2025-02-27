@@ -45,10 +45,15 @@ def rfid_worker():
                 uid = rfid.detect_tag()
                 if uid:
                     oled.display_text("writing...", line=3)
-                    if rfid.write_data(8, "Hello, RFID!"):
+                    time.sleep(0.5)
+                    if rfid.write_data(6, "Hello, RFID!"):
+                        time.sleep(0.5)
+                        oled.display_text("success", line=3)
                         message = f"Tag Write: {uid}"
                         print(message)
                         message_queue.put(message)
+                    else:
+                        oled.display_text("failed", line=3)
                 time.sleep(0.5)
             else:
                 if mode == Mode.INVENTORY_IN:
@@ -59,7 +64,7 @@ def rfid_worker():
                 uid = rfid.detect_tag()
                 if uid:
                     oled.display_text("reading...", line=3)
-                    data = rfid.read_data(8)
+                    data = rfid.read_data(6)
                     oled.display_text(f"{data}", line=3)
                     desc = f"Inventory {mode}: {uid}, {data}"
                     print(desc)
@@ -148,12 +153,12 @@ def process_messages():
                 if message.get("action") == Action.PRODUCT_GET_BY_ID.value:
                     oled.clear()
                     oled.display_text(message.get('payload').get('products')[0].get('name'), line=1)
-                    oled.display_text('    -      +',line=2)
+                    oled.display_text('    -    +    o    x',line=3)
 
                     qty = 1
                     confirm = False
                     while True:
-                        oled.display_text(f"Qty: {qty}" , line=3)
+                        oled.display_text(f"Qty: {qty}" , line=2)
                         if btn2.read():
                             if qty > 1:
                                 qty -= 1
@@ -169,7 +174,7 @@ def process_messages():
                         time.sleep(0.2)
                 
                     if confirm:
-                        oled.display_text('confirmed', line=2)
+                        oled.display_text('..confirmed', line=3)
                         mode = stateMachine.get_state()
                         action = Action.INVENTORY_IN.value if mode == Mode.INVENTORY_IN.value else Action.INVENTORY_OUT.value
                         inventory_item = InventoryItem(product_id=message.get('payload').get('products')[0].get('id'),quantity=qty, timestamp=time.time())
@@ -177,7 +182,7 @@ def process_messages():
                         msg = Message(action=action, type=Type.RESPONSE.value, component=Component.IOT.value, message_id=time.time(), status=Status.SUCCESS.value, timestamp=time.time(), payload=payload)
                         message_queue.put(msg)
                     else:
-                        oled.display_text('cancelled', line=2)
+                        oled.display_text('..discarded', line=3)
 
 
             processing_queue.task_done()
