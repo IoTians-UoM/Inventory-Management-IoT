@@ -86,7 +86,7 @@ oled.clear()
 def rfid_worker():
     """Thread worker that listens for button presses and reads RFID data."""
     try:
-        from utils.local_db_utility import get_product_id_by_rfid  # Assuming this exists in local_db_utility
+        # from utils.local_db_utility import get_product_id_by_rfid  # Assuming this exists in local_db_utility
 
         rfid = RFIDController()
         while True:
@@ -115,15 +115,15 @@ def rfid_worker():
                     oled.display_text(f"Data: {data}", line=3)
 
                     # Lookup product ID from local DB using RFID UID
-                    product_id = get_product_id_by_rfid(uid)
+                    # product_id = get_product_id_by_rfid(uid)
 
                     message = Message(
                         action=Action.PRODUCT_GET_BY_ID.value,
                         type=Type.REQUEST.value,
                         message_id=uid,
                         payload={
-                            # "product_id": '1',  # <-- Hardcoded line commented out
-                            "product_id": product_id  # <-- Fetched from DB
+                            "product_id": '1',  # <-- Hardcoded line commented out
+                            # "product_id": product_id  # <-- Fetched from DB
                         },
                         timestamp=str(time.time())
                     )
