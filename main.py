@@ -268,6 +268,7 @@ def sync_worker():
                     localDB.upsert('inventory', i, 'id')
                     inventory_sync_queue.task_done()
 
+                print("ddddddddddddddddddddddddddddddd",p,i)
                 if not p and not i:
                     break;
             
