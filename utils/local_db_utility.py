@@ -90,32 +90,69 @@ class LocalDBUtility:
         except Exception as e:
             raise RuntimeError(f"Clear failed in '{table_name}': {e}")
 
+    # def upsert(self, table_name, data, field):
+    #     """
+    #     Upsert operation: Update the record if it exists; otherwise, insert it.
+
+    #     :param table_name: Name of the table to upsert data into.
+    #     :param data: Data dictionary to insert or update.
+    #     :param field: Field to match existing records for the update.
+    #     """
+    #     try:
+    #         self.validate_schema(table_name, data)
+    #         table = self.get_table(table_name)
+
+    #         # Ensure data[field] exists before querying
+    #         field_value = data.get(field)
+    #         if field_value is None:
+    #             raise ValueError(f"Field '{field}' is missing in the provided data")
+
+    #         existing_records = table.search(self.query[field] == field_value)
+
+    #         if existing_records:
+    #             # Corrected update operation
+    #             table.update(data, self.query[field] == field_value)
+    #             print(f"Upsert: Existing record(s) updated in '{table_name}'.")
+    #         else:
+    #             table.insert(data)
+    #             print(f"Upsert: New record inserted into '{table_name}'.")
+
+    #     except Exception as e:
+    #         raise RuntimeError(f"Upsert failed in '{table_name}': {e}")
+
     def upsert(self, table_name, data, field):
         """
         Upsert operation: Update the record if it exists; otherwise, insert it.
 
         :param table_name: Name of the table to upsert data into.
-        :param data: Data dictionary to insert or update.
+        :param data: Single data dictionary or list of dictionaries.
         :param field: Field to match existing records for the update.
         """
         try:
-            self.validate_schema(table_name, data)
             table = self.get_table(table_name)
 
-            # Ensure data[field] exists before querying
-            field_value = data.get(field)
-            if field_value is None:
-                raise ValueError(f"Field '{field}' is missing in the provided data")
+            # Ensure data is a list for uniform processing
+            if not isinstance(data, list):
+                data = [data]  # Convert single dictionary to a list
 
-            existing_records = table.search(self.query[field] == field_value)
+            for entry in data:
+                self.validate_schema(table_name, entry)
 
-            if existing_records:
-                # Corrected update operation
-                table.update(data, self.query[field] == field_value)
-                print(f"Upsert: Existing record(s) updated in '{table_name}'.")
-            else:
-                table.insert(data)
-                print(f"Upsert: New record inserted into '{table_name}'.")
+                field_value = entry.get(field)
+                if field_value is None:
+                    raise ValueError(f"Field '{field}' is missing in the provided data")
+
+                existing_records = table.search(self.query[field] == field_value)
+
+                if existing_records:
+                    table.update(entry, self.query[field] == field_value)
+                    print(f"Upsert: Updated existing record in '{table_name}' with {field}={field_value}.")
+                else:
+                    table.insert(entry)
+                    print(f"Upsert: Inserted new record into '{table_name}' with {field}={field_value}.")
 
         except Exception as e:
             raise RuntimeError(f"Upsert failed in '{table_name}': {e}")
+        
+
+    
