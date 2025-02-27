@@ -144,11 +144,12 @@ def process_messages():
             message = processing_queue.get()    
             if message:
                 print(f"Processing Message: {message}")
-                oled.clear()
 
                 # Perform actions based on message type
                 if message.get("action") == Action.PRODUCT_GET_BY_ID.value:
+                    oled.clear()
                     oled.display_text(message.get('payload').get('products')[0].get('name'), line=1)
+                    oled.display_text('  -  +  ',line=2)
 
                     qty = 1
                     confirm = False
