@@ -82,14 +82,7 @@ def rfid_worker():
                         oled.display_text("Reading tag...", line=3)
                         time.sleep(0.5)
                         oled.display_text("Success!", line=3)
-                        message_queue.put(f"Tag Read: {data}")
-                    else:
-                        print("Failed to read tag")
-                        oled.display_text("Failed!", line=3)
-
-                        # Lookup product ID from local DB using RFID UID
-                        # product_id = get_product_id_by_rfid(uid)
-
+                        # message_queue.put(f"Tag Read: {data}")
                         message = Message(
                             action=Action.PRODUCT_GET_BY_ID.value,
                             type=Type.REQUEST.value,
@@ -101,6 +94,12 @@ def rfid_worker():
                             timestamp=str(time.time())
                         )
                         message_queue.put(message)  # Allow time to read
+                    else:
+                        print("Failed to read tag")
+                        oled.display_text("Failed!", line=3)
+
+                        # Lookup product ID from local DB using RFID UID
+                        # product_id = get_product_id_by_rfid(uid)
             time.sleep(0.5)
     except Exception as e:
         print(f"Error in RFID worker: {e}")
