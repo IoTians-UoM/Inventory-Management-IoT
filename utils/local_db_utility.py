@@ -94,13 +94,22 @@ class LocalDBUtility:
         try:
             self.validate_schema(table_name, data)
             table = self.get_table(table_name)
-            existing_records = table.search(self.query[field] == data.get(field))
+            
+            # Ensure data[field] exists before querying
+            field_value = data.get(field)
+            if field_value is None:
+                raise ValueError(f"Field '{field}' is missing in the provided data")
 
-            if existing_records:
-                table.update(data, self.query[field] == data.get(field))
-                print(f"Upsert: Existing record updated in '{table_name}'.")
+            existing_records = table.search(self.query[field] == field_value)
+
+            if existing_records:  # Ensure it's a non-empty list
+                for record in existing_records:
+                    table.update(data, self.query[field] == field_value)
+                print(f"Upsert: Existing record(s) updated in '{table_name}'.")
             else:
                 table.insert(data)
                 print(f"Upsert: New record inserted into '{table_name}'.")
+        
         except Exception as e:
             raise RuntimeError(f"Upsert failed in '{table_name}': {e}")
+
