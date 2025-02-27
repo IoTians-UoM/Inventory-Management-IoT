@@ -73,6 +73,7 @@ def rfid_worker():
                         # oled.display_text("Success!", line=3)
                         message_queue.put(f"Tag Write: {tag_to_write}")
                     else:
+                        print(f"Failed to write tag: {tag_to_write}")
                         # oled.display_text("Failed!", line=3)
                 else:
                     data = rfid.read_data(5)
