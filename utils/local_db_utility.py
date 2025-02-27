@@ -19,7 +19,7 @@ class LocalDBUtility:
         """Retrieve a specific table from the database."""
         return self.db.table(table_name)
 
-    def validate_schema(self, table_name, data):
+    def validate_schema(self, table_name, data, strict=False):
         """Validate data against the TypedDict schema for a table."""
         if table_name in self.schemas:
             expected_fields = set(self.schemas[table_name].__annotations__.keys())
@@ -32,7 +32,10 @@ class LocalDBUtility:
                 raise ValueError(f"Schema validation failed for '{table_name}'. Missing fields: {missing_fields}")
 
             if extra_fields:
-                print(f"Warning: Extra fields found in '{table_name}': {extra_fields}")
+                if strict:
+                    raise ValueError(f"Extra fields found in '{table_name}': {extra_fields}")
+                else:
+                    print(f"Warning: Extra fields found in '{table_name}': {extra_fields}")
 
         return True
 
@@ -55,13 +58,17 @@ class LocalDBUtility:
     def search(self, table_name, field, value):
         """Search for records where field == value in the specified table."""
         try:
-            return self.get_table(table_name).search(self.query[field] == value)
+            records = self.get_table(table_name).search(self.query[field] == value)
+            return records if records else []  # Ensures a list is always returned
         except Exception as e:
             raise RuntimeError(f"Search failed in '{table_name}': {e}")
 
     def update(self, table_name, updates, field, value):
         """Update records in the specified table."""
         try:
+            if not isinstance(updates, dict):
+                raise TypeError(f"Updates must be a dictionary, got {type(updates)}")
+
             self.get_table(table_name).update(updates, self.query[field] == value)
             print(f"Update successful in '{table_name}'.")
         except Exception as e:
@@ -94,7 +101,7 @@ class LocalDBUtility:
         try:
             self.validate_schema(table_name, data)
             table = self.get_table(table_name)
-            
+
             # Ensure data[field] exists before querying
             field_value = data.get(field)
             if field_value is None:
@@ -102,8 +109,9 @@ class LocalDBUtility:
 
             existing_records = table.search(self.query[field] == field_value)
 
-            if existing_records:  # Ensure it's a non-empty list
-                table.update(lambda record: {**record, **data}, self.query[field] == field_value)
+            if existing_records:
+                # Corrected update operation
+                table.update(data, self.query[field] == field_value)
                 print(f"Upsert: Existing record(s) updated in '{table_name}'.")
             else:
                 table.insert(data)
@@ -111,5 +119,3 @@ class LocalDBUtility:
 
         except Exception as e:
             raise RuntimeError(f"Upsert failed in '{table_name}': {e}")
-
-
