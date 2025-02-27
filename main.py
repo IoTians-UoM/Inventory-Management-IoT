@@ -50,7 +50,7 @@ def rfid_worker():
         while True:
             mode = stateMachine.get_state()
             oled.clear()
-            oled.display_text(f"{mode.value} Mode", line=1)
+            oled.display_text(f"{mode.value}", line=1)
             oled.display_text("Scan RFID tag", line=2)
 
             uid = rfid.detect_tag()
@@ -95,7 +95,8 @@ def mode_switch_worker():
                 
                 stateMachine.transition()
                 oled.clear()
-                oled.display_text(f"Mode: {stateMachine.get_state().value}", line=1)
+                oled.display_text(f"Switched to:", line=1)
+                oled.display_text(f"{stateMachine.get_state().value}", line=2)
                 
                 buzz.write(1)
                 time.sleep(0.1)
@@ -130,8 +131,6 @@ async def ws_worker():
                     while True:
                         try:
                             response = await ws.recv()
-                            oled.clear()
-                            oled.display_text(f"Received: {response}", line=2)
                             time.sleep(1)  # Allow reading time
                             processing_queue.put(json.loads(response))
                         except websockets.exceptions.ConnectionClosed:
@@ -157,7 +156,7 @@ def handle_tag_write_request(message):
 
     oled.clear()
     oled.display_text("Tag Write Mode", line=1)
-    oled.display_text("Scan RFID Tag", line=2)
+    oled.display_text("Place RFID Tag", line=2)
 
     buzz.write(1)
     time.sleep(0.2)
@@ -249,8 +248,6 @@ def sync_manager(message):
 def sync_worker():
     while True:
         try:
-            oled.clear()
-            oled.display_text("Syncing Data...", line=1)
             time.sleep(1)
 
             products = localDB.read_all('product')
