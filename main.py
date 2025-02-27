@@ -43,9 +43,51 @@ oled.display_text("By IoTians", line=3)
 time.sleep(3)
 oled.clear()
 
+# def rfid_worker():
+#     """Thread worker that listens for button presses and reads RFID data."""
+#     try:
+#         rfid = RFIDController()
+#         while True:
+#             mode = stateMachine.get_state()
+#             oled.clear()
+#             oled.display_text(f"{mode.value} Mode", line=1)
+#             oled.display_text("Scan RFID tag", line=2)
+
+#             uid = rfid.detect_tag()
+#             if uid:
+#                 oled.display_text("Processing...", line=3)
+#                 buzz.write(1)
+#                 time.sleep(0.1)
+#                 buzz.write(0)
+
+#                 if mode == Mode.TAG_WRITE:
+#                     oled.display_text("Writing tag...", line=3)
+#                     time.sleep(0.5)
+#                     if rfid.write_data(4, tag_to_write):
+#                         oled.display_text("Success!", line=3)
+#                         message_queue.put(f"Tag Write: {uid}")
+#                     else:
+#                         oled.display_text("Failed!", line=3)
+#                 else:
+#                     data = rfid.read_data(4)
+#                     oled.display_text(f"Data: {data}", line=3)
+#                     message = Message(
+#                         action=Action.PRODUCT_GET_BY_ID.value,
+#                         type=Type.REQUEST.value,
+#                         message_id=uid,
+#                         payload={"product_id": '1'},
+#                         timestamp=str(time.time())
+#                     )
+#                     message_queue.put(message)
+#                 time.sleep(1)  # Allow time to read
+#             time.sleep(0.5)
+#     except Exception as e:
+#         print(f"Error in RFID worker: {e}")
 def rfid_worker():
     """Thread worker that listens for button presses and reads RFID data."""
     try:
+        from utils.local_db_utility import get_product_id_by_rfid  # Assuming this exists in local_db_utility
+
         rfid = RFIDController()
         while True:
             mode = stateMachine.get_state()
@@ -71,11 +113,18 @@ def rfid_worker():
                 else:
                     data = rfid.read_data(4)
                     oled.display_text(f"Data: {data}", line=3)
+
+                    # Lookup product ID from local DB using RFID UID
+                    product_id = get_product_id_by_rfid(uid)
+
                     message = Message(
                         action=Action.PRODUCT_GET_BY_ID.value,
                         type=Type.REQUEST.value,
                         message_id=uid,
-                        payload={"product_id": '1'},
+                        payload={
+                            # "product_id": '1',  # <-- Hardcoded line commented out
+                            "product_id": product_id  # <-- Fetched from DB
+                        },
                         timestamp=str(time.time())
                     )
                     message_queue.put(message)

@@ -155,4 +155,15 @@ class LocalDBUtility:
             raise RuntimeError(f"Upsert failed in '{table_name}': {e}")
         
 
-    
+  
+
+    db = TinyDB('inventory_db.json')
+    ProductTable = db.table('products')
+    query = Query()
+
+    def get_product_id_by_rfid(rfid_uid: str) -> str:
+        result = ProductTable.get(query.rfid_uid == rfid_uid)
+        if result:
+            return result.get('id', 'unknown')
+        return 'unknown'
+
