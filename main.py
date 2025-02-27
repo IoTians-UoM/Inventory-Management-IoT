@@ -259,6 +259,8 @@ def sync_worker():
 
             while True:
                 p = products_sync_queue.get()
+                print("ddddddddddddddddddddddddddddddd",p)
+
                 if p:
                     localDB.upsert('product', p, 'id')
                     products_sync_queue.task_done()
@@ -268,13 +270,12 @@ def sync_worker():
                     localDB.upsert('inventory', i, 'id')
                     inventory_sync_queue.task_done()
 
-                print("ddddddddddddddddddddddddddddddd",p,i)
                 if not p and not i:
                     break;
             
             # time.sleep(50)
         except Exception as e:
-            print("Error in syncing")
+            print(f"Error in syncing {e}")
 
 
 # Start the RFID worker thread (normal threading)
