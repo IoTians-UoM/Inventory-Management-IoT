@@ -150,6 +150,21 @@ def run_ws_worker():
     """Runs the async WebSocket worker inside an asyncio event loop."""
     asyncio.run(ws_worker())
 
+def handle_tag_write_request(message):
+    """Handles tag writing requests."""
+    global tag_to_write
+    tag_to_write = message.get('payload').get('product_id')
+
+    oled.clear()
+    oled.display_text("Tag Write Mode", line=1)
+    oled.display_text("Scan RFID Tag", line=2)
+
+    buzz.write(1)
+    time.sleep(0.2)
+    buzz.write(0)
+
+    stateMachine.transition(Mode.TAG_WRITE)
+
 def process_messages():
     """Worker function to process messages from the processing queue."""
     while True:
