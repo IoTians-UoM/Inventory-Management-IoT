@@ -45,11 +45,11 @@ def rfid_worker():
                 uid = rfid.detect_tag()
                 if uid:
                     oled.display_text("writing...", line=3)
-                    rfid.write_data(8, "Hello, RFID!")
-                    time.sleep(1)
-                    message = f"Tag Write: {uid}"
-                    print(message)
-                    message_queue.put(message)
+                    if rfid.write_data(8, "Hello, RFID!"):
+                        message = f"Tag Write: {uid}"
+                        print(message)
+                        message_queue.put(message)
+                time.sleep(0.5)
             else:
                 if mode == Mode.INVENTORY_IN:
                     oled.display_text("Inventory In", line=1)
@@ -60,13 +60,12 @@ def rfid_worker():
                 if uid:
                     oled.display_text("reading...", line=3)
                     data = rfid.read_data(8)
-                    time.sleep(1)
                     oled.display_text(f"{data}", line=3)
                     desc = f"Inventory {mode}: {uid}, {data}"
                     print(desc)
                     message = Message(action=Action.PRODUCT_GET_BY_ID.value, type=Type.REQUEST.value, message_id=uid, payload={"product_id": '1'}, timestamp=str(time.time()))
                     message_queue.put(message)
-            time.sleep(0.5)
+                time.sleep(0.5)
     except Exception as e:
         print(f"Error in RFID worker: {e}")
 
