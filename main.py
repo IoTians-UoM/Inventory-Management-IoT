@@ -153,7 +153,7 @@ def process_messages():
                 if message.get("action") == Action.PRODUCT_GET_BY_ID.value:
                     oled.clear()
                     oled.display_text(message.get('payload').get('products')[0].get('name'), line=1)
-                    oled.display_text('    -    +    o    x',line=3)
+                    oled.display_text('   -   +   o   x',line=3)
 
                     qty = 1
                     confirm = False
