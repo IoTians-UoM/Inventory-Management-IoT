@@ -23,6 +23,7 @@ products_sync_queue = queue.Queue()
 inventory_sync_queue = queue.Queue()
 tag_to_write = ''
 
+
 # Hardware Components
 oled = OLEDController()
 btn1 = GPIOController(24, 'in', 'high')
@@ -55,43 +56,49 @@ def rfid_worker():
             oled.clear()
             oled.display_text(f"{mode.value}", line=1)
 
-            uid = rfid.detect_tag()
-            if uid:
+            if rfid.detect_tag():
                 oled.display_text("Processing...", line=3)
                 buzz.write(1)
                 time.sleep(0.1)
                 buzz.write(0)
 
                 if mode == Mode.TAG_WRITE:
-                    if not tag_to_write:
+                    if tag_to_write == '':
                         oled.display_text("No data to write", line=3)
                         return
                     if rfid.write_data(5, tag_to_write):
+                        print(f"Writing Tag: {tag_to_write}")
                         oled.display_text("Writing tag...", line=3)
                         time.sleep(0.5)
                         oled.display_text("Success!", line=3)
-                        message_queue.put(f"Tag Write: {uid}")
+                        message_queue.put(f"Tag Write: {tag_to_write}")
                     else:
                         oled.display_text("Failed!", line=3)
                 else:
                     data = rfid.read_data(5)
-                    oled.display_text(f"Data: {data}", line=3)
+                    if data:
+                        print(f"Reading Tag: {data}")
+                        oled.display_text("Reading tag...", line=3)
+                        time.sleep(0.5)
+                        oled.display_text("Success!", line=3)
+                        message_queue.put(f"Tag Read: {data}")
+                    else:
+                        oled.display_text("Failed!", line=3)
 
                     # Lookup product ID from local DB using RFID UID
                     # product_id = get_product_id_by_rfid(uid)
 
-                    message = Message(
-                        action=Action.PRODUCT_GET_BY_ID.value,
-                        type=Type.REQUEST.value,
-                        message_id=uid,
-                        payload={
-                            "product_id": '1',  # <-- Hardcoded line commented out
-                            # "product_id": product_id  # <-- Fetched from DB
-                        },
-                        timestamp=str(time.time())
-                    )
-                    message_queue.put(message)
-                time.sleep(1)  # Allow time to read
+                    # message = Message(
+                    #     action=Action.PRODUCT_GET_BY_ID.value,
+                    #     type=Type.REQUEST.value,
+                    #     message_id=uid,
+                    #     payload={
+                    #         "product_id": '1',  # <-- Hardcoded line commented out
+                    #         # "product_id": product_id  # <-- Fetched from DB
+                    #     },
+                    #     timestamp=str(time.time())
+                    # )
+                    # message_queue.put(message)  # Allow time to read
             time.sleep(0.5)
     except Exception as e:
         print(f"Error in RFID worker: {e}")
