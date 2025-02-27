@@ -149,14 +149,15 @@ def process_messages():
                 if message.get("action") == Action.PRODUCT_GET_BY_ID.value:
                     oled.clear()
                     oled.display_text(message.get('payload').get('products')[0].get('name'), line=1)
-                    oled.display_text('  -  +  ',line=2)
+                    oled.display_text('    -      +',line=2)
 
                     qty = 1
                     confirm = False
                     while True:
                         oled.display_text(f"Qty: {qty}" , line=3)
                         if btn2.read():
-                            qty -= 1 if qty > 1 else 1
+                            if qty > 1:
+                                qty -= 1
                         elif btn3.read():
                             qty += 1
                         elif btn5.read():
