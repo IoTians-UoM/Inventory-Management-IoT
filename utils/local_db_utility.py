@@ -103,14 +103,13 @@ class LocalDBUtility:
             existing_records = table.search(self.query[field] == field_value)
 
             if existing_records:  # Ensure it's a non-empty list
-                print(existing_records, "existing")
-                for record in existing_records:
-                    table.update(data, self.query[field] == field_value)
+                table.update(lambda record: {**record, **data}, self.query[field] == field_value)
                 print(f"Upsert: Existing record(s) updated in '{table_name}'.")
             else:
                 table.insert(data)
                 print(f"Upsert: New record inserted into '{table_name}'.")
-        
+
         except Exception as e:
             raise RuntimeError(f"Upsert failed in '{table_name}': {e}")
+
 
