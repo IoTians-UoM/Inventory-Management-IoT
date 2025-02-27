@@ -46,6 +46,7 @@ class Product(TypedDict):
     timestamp: str
 
 class InventoryItem(TypedDict):
+    id: str
     product_id: str
     product_name: Optional[str]
     quantity: int

@@ -21,11 +21,3 @@ class NetworkChecker:
             return True
         except OSError:
             return False
-
-
-# ✅ Example Usage
-if __name__ == "__main__":
-    if NetworkChecker.is_connected():
-        print("Network is connected.")
-    else:
-        print("Network is not connected.")
