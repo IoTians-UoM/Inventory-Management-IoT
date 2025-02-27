@@ -158,17 +158,17 @@ def process_messages():
                         if btn2.read():
                             if qty > 1:
                                 qty -= 1
+                                print(f'qty {qty}')
                         elif btn3.read():
                             qty += 1
-                        elif btn5.read():
+                            print(f'qty {qty}')
+                        elif btn4.read():
                             confirm = True
                             break;
-                        elif btn4.read() or btn1.read():
+                        elif btn5.read() or btn1.read():
                             break;
                         time.sleep(0.2)
-                        print(f'qty {qty}')
                 
-                    oled.clear()
                     if confirm:
                         oled.display_text('confirmed', line=2)
                         mode = stateMachine.get_state()
