@@ -63,9 +63,12 @@ def rfid_worker():
                 buzz.write(0)
 
                 if mode == Mode.TAG_WRITE:
-                    oled.display_text("Writing tag...", line=3)
-                    time.sleep(0.5)
+                    if not tag_to_write:
+                        oled.display_text("No data to write", line=3)
+                        return
                     if rfid.write_data(5, tag_to_write):
+                        oled.display_text("Writing tag...", line=3)
+                        time.sleep(0.5)
                         oled.display_text("Success!", line=3)
                         message_queue.put(f"Tag Write: {uid}")
                     else:
