@@ -190,6 +190,7 @@ def process_messages():
         try:
             message = processing_queue.get()
             if message:
+                print(message)
                 action = message.get('action')
                 if action == Action.PRODUCT_GET_BY_ID.value:
                     inventory_operations(message)
