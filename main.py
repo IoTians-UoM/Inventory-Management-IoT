@@ -4,7 +4,7 @@ import time
 import asyncio
 import RPi.GPIO as GPIO
 from hardware import RFIDController, GPIOController, StateMachine, OLEDController
-from utils import Mode, Message, Action, Type, ProductPayload, Component, Status, InventoryPayload, InventoryItem
+from utils import Mode, Message, Action, Type, ProductPayload, Component, Status, InventoryPayload, InventoryItem, LocalDBUtility, Product, SyncPayload
 import websockets
 import json
 
@@ -18,12 +18,19 @@ modes = {
 stateMachine = StateMachine(modes, Mode.INVENTORY_IN)
 message_queue = queue.Queue()
 processing_queue = queue.Queue()  # For processing incoming messages
+products_sync_queue = queue.Queue()
+inventory_sync_queue = queue.Queue()
+tag_to_write = ''
 oled = OLEDController()
 btn1 = GPIOController(24, 'in', 'high')
 btn2 = GPIOController(22, 'in', 'high')
 btn3 = GPIOController(27, 'in', 'high')
 btn4 = GPIOController(17, 'in', 'high')
 btn5 = GPIOController(4, 'in', 'high')
+
+schemas = {'product':Product,'inventory':InventoryItem}
+localDB = LocalDBUtility('db.json', schemas)
+
 
 oled.display_text("Welcome to", line=1)
 oled.display_text("Inventory System", line=2)
@@ -46,7 +53,7 @@ def rfid_worker():
                 if uid:
                     oled.display_text("writing...", line=3)
                     time.sleep(0.5)
-                    if rfid.write_data(4, "Hello, RFID!"):
+                    if rfid.write_data(4, tag_to_write):
                         time.sleep(0.5)
                         oled.display_text("success", line=3)
                         message = f"Tag Write: {uid}"
@@ -142,6 +149,11 @@ def run_ws_worker():
     asyncio.run(ws_worker())
 
 
+def handle_tag_write_request(message):
+    tag_to_write = message.get('payload').get('product_id')
+    stateMachine.transition(Mode.TAG_WRITE.value)
+
+
 def process_messages():
     """Worker function to process messages from the processing queue."""
     while True:
@@ -149,48 +161,96 @@ def process_messages():
             message = processing_queue.get()    
             if message:
                 print(f"Processing Message: {message}")
+                action = message.get('action')
 
                 # Perform actions based on message type
-                if message.get("action") == Action.PRODUCT_GET_BY_ID.value:
-                    oled.clear()
-                    oled.display_text(message.get('payload').get('products')[0].get('name'), line=1)
-                    oled.display_text('   -   +   o   x',line=3)
-
-                    qty = 1
-                    confirm = False
-                    while True:
-                        oled.display_text(f"Qty: {qty}" , line=2)
-                        if btn2.read():
-                            if qty > 1:
-                                qty -= 1
-                                print(f'qty {qty}')
-                        elif btn3.read():
-                            qty += 1
-                            print(f'qty {qty}')
-                        elif btn4.read():
-                            confirm = True
-                            break;
-                        elif btn5.read() or btn1.read():
-                            break;
-                        time.sleep(0.2)
-                
-                    if confirm:
-                        oled.display_text('..confirmed', line=3)
-                        mode = stateMachine.get_state()
-                        action = Action.INVENTORY_IN.value if mode == Mode.INVENTORY_IN.value else Action.INVENTORY_OUT.value
-                        inventory_item = InventoryItem(product_id=message.get('payload').get('products')[0].get('id'),quantity=qty, timestamp=time.time())
-                        payload = InventoryPayload(inventory_items=[inventory_item])
-                        msg = Message(action=action, type=Type.RESPONSE.value, component=Component.IOT.value, message_id=time.time(), status=Status.SUCCESS.value, timestamp=time.time(), payload=payload)
-                        message_queue.put(msg)
-                    else:
-                        oled.display_text('..discarded', line=3)
-
+                if action == Action.PRODUCT_GET_BY_ID.value:
+                    inventory_operations(message)
+                elif action == Action.SYNC.value:
+                    sync_manager(message)
+                elif action == Action.TAG_WRITE.value:
+                    handle_tag_write_request(message)
 
             processing_queue.task_done()
         except json.JSONDecodeError:
             print("Error: Received invalid JSON format")
         except Exception as e:
             print(f"Error processing message: {e}")
+
+
+def inventory_operations(message):
+    oled.clear()
+    oled.display_text(message.get('payload').get('products')[0].get('name'), line=1)
+    oled.display_text('   -   +   o   x',line=3)
+
+    qty = 1
+    confirm = False
+    while True:
+        oled.display_text(f"Qty: {qty}" , line=2)
+        if btn2.read():
+            if qty > 1:
+                qty -= 1
+                print(f'qty {qty}')
+        elif btn3.read():
+            qty += 1
+            print(f'qty {qty}')
+        elif btn4.read():
+            confirm = True
+            break;
+        elif btn5.read() or btn1.read():
+            break;
+        time.sleep(0.2)
+
+    if confirm:
+        oled.display_text('..confirmed', line=3)
+        mode = stateMachine.get_state()
+        action = Action.INVENTORY_IN.value if mode == Mode.INVENTORY_IN.value else Action.INVENTORY_OUT.value
+        inventory_item = InventoryItem(product_id=message.get('payload').get('products')[0].get('id'),quantity=qty, timestamp=time.time())
+        payload = InventoryPayload(inventory_items=[inventory_item])
+        msg = Message(action=action, type=Type.RESPONSE.value, component=Component.IOT.value, message_id=time.time(), status=Status.SUCCESS.value, timestamp=time.time(), payload=payload)
+        message_queue.put(msg)
+    else:
+        oled.display_text('..discarded', line=3)   
+
+
+def sync_manager(message):
+    products = message.get('payload').get('products')
+    inventory = message.get('payload').get('inventory')
+
+    products_sync_queue.put(products)
+    inventory_sync_queue.put(inventory)
+
+
+
+def sync_worker():
+    while True:
+        try:
+            products = localDB.read_all('product')
+            inventory = localDB.read_all('inventory')
+
+            payload = SyncPayload(products=products, inventory=inventory, timestamp=time.time())
+            message = Message(action=Action.SYNC.value, type=Type.REQUEST.value, component=Component.IOT.value, timestamp=time.time(), payload=payload)
+
+            message_queue.put(message)
+            time.sleep(10)
+
+            while True:
+                p = products_sync_queue.get()
+                if p:
+                    localDB.upsert('product', p, 'id')
+                    products_sync_queue.task_done()
+
+                i = inventory_sync_queue.get()
+                if i:
+                    localDB.upsert('inventory', i, 'id')
+                    inventory_sync_queue.task_done()
+
+                if not p and not q:
+                    break;
+            
+            time.sleep(50)
+        except Exception as e:
+            print("Error in syncing")
 
 
 # Start the RFID worker thread (normal threading)
@@ -208,6 +268,10 @@ mode_thread.start()
 # Start the message processing worker thread
 processing_thread = threading.Thread(target=process_messages, daemon=True)
 processing_thread.start()
+
+# Start sync manager
+sync_thread = threading.Thread(target=sync_worker, daemon=True)
+sync_thread.start()
 
 
 # Main thread loop
