@@ -257,7 +257,7 @@ def sync_worker():
             message = Message(action=Action.SYNC.value, type=Type.REQUEST.value, component=Component.IOT.value, timestamp=time.time(), payload=payload)
             message_queue.put(message)
 
-            time.sleep(10)  # Sync interval
+            time.sleep(59)  # Sync interval
         except Exception as e:
             print(f"Error in syncing {e}")
 
