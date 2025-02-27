@@ -239,6 +239,8 @@ def sync_manager(message):
     products = message.get('payload').get('products')
     inventory = message.get('payload').get('inventory')
 
+    print(products, inventory)
+
     products_sync_queue.put(products)
     inventory_sync_queue.put(inventory)
 
