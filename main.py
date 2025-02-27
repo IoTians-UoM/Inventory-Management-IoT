@@ -27,6 +27,7 @@ btn2 = GPIOController(22, 'in', 'high')
 btn3 = GPIOController(27, 'in', 'high')
 btn4 = GPIOController(17, 'in', 'high')
 btn5 = GPIOController(4, 'in', 'high')
+buzz = GPIOController(5, 'out', 'high')
 
 schemas = {'product':Product,'inventory':InventoryItem}
 localDB = LocalDBUtility('db.json', schemas)
@@ -54,7 +55,9 @@ def rfid_worker():
                     oled.display_text("writing...", line=3)
                     time.sleep(0.5)
                     if rfid.write_data(4, tag_to_write):
+                        buzz.write(1)
                         time.sleep(0.5)
+                        buzz.write(0)
                         oled.display_text("success", line=3)
                         message = f"Tag Write: {uid}"
                         print(message)
@@ -71,7 +74,10 @@ def rfid_worker():
                 uid = rfid.detect_tag()
                 if uid:
                     oled.display_text("reading...", line=3)
+                    buzz.write(1)
                     data = rfid.read_data(4)
+                    time.sleep(0.1)
+                    buzz.write(0)
                     oled.display_text(f"{data}", line=3)
                     desc = f"Inventory {mode}: {uid}, {data}"
                     print(desc)
@@ -93,7 +99,14 @@ def mode_switch_worker():
                 oled.display_text("to", line=2)
                 stateMachine.transition()
                 oled.display_text(stateMachine.get_state().value, line=3)
-                time.sleep(1)
+                buzz.write(1)
+                time.sleep(0.1)
+                buzz.write(0)
+                time.sleep(0.1)
+                buzz.write(1)
+                time.sleep(0.1)
+                buzz.write(0)
+                time.sleep(0.2)
                 message = f"Mode switched to: {stateMachine.get_state()}"
                 print(message)
                 message_queue.put(message)
@@ -152,6 +165,9 @@ def run_ws_worker():
 def handle_tag_write_request(message):
     tag_to_write = message.get('payload').get('product_id')
     stateMachine.transition(Mode.TAG_WRITE.value)
+    buzz.write(1)
+    time.sleep(0.2)
+    buzz.write(0)
 
 
 def process_messages():
@@ -203,6 +219,9 @@ def inventory_operations(message):
 
     if confirm:
         oled.display_text('..confirmed', line=3)
+        buzz.write(1)
+        time.sleep(0.3)
+        buzz.write(0)
         mode = stateMachine.get_state()
         action = Action.INVENTORY_IN.value if mode == Mode.INVENTORY_IN.value else Action.INVENTORY_OUT.value
         inventory_item = InventoryItem(product_id=message.get('payload').get('products')[0].get('id'),quantity=qty, timestamp=time.time())
@@ -210,6 +229,9 @@ def inventory_operations(message):
         msg = Message(action=action, type=Type.RESPONSE.value, component=Component.IOT.value, message_id=time.time(), status=Status.SUCCESS.value, timestamp=time.time(), payload=payload)
         message_queue.put(msg)
     else:
+        buzz.write(1)
+        time.sleep(0.1)
+        buzz.write(0)
         oled.display_text('..discarded', line=3)   
 
 
@@ -231,6 +253,7 @@ def sync_worker():
             payload = SyncPayload(products=products, inventory=inventory, timestamp=time.time())
             message = Message(action=Action.SYNC.value, type=Type.REQUEST.value, component=Component.IOT.value, timestamp=time.time(), payload=payload)
 
+            print("syncing...")
             message_queue.put(message)
             time.sleep(10)
 
@@ -245,7 +268,7 @@ def sync_worker():
                     localDB.upsert('inventory', i, 'id')
                     inventory_sync_queue.task_done()
 
-                if not p and not q:
+                if not p and not i:
                     break;
             
             time.sleep(50)
