@@ -129,7 +129,7 @@ def mode_switch_worker():
 
 async def ws_worker():
     """Async worker that handles WebSocket communication with reconnection logic."""
-    uri = "ws://192.168.112.97:8000"
+    uri = "ws://192.168.190.97:8000"
     retry_delay = 5
 
     while True:
