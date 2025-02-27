@@ -54,7 +54,6 @@ def rfid_worker():
             mode = stateMachine.get_state()
             oled.clear()
             oled.display_text(f"{mode.value}", line=1)
-            oled.display_text("Scan RFID tag", line=2)
 
             uid = rfid.detect_tag()
             if uid:
@@ -66,13 +65,13 @@ def rfid_worker():
                 if mode == Mode.TAG_WRITE:
                     oled.display_text("Writing tag...", line=3)
                     time.sleep(0.5)
-                    if rfid.write_data(4, tag_to_write):
+                    if rfid.write_data(5, tag_to_write):
                         oled.display_text("Success!", line=3)
                         message_queue.put(f"Tag Write: {uid}")
                     else:
                         oled.display_text("Failed!", line=3)
                 else:
-                    data = rfid.read_data(4)
+                    data = rfid.read_data(5)
                     oled.display_text(f"Data: {data}", line=3)
 
                     # Lookup product ID from local DB using RFID UID
